@@ -1,0 +1,135 @@
+/*
+@(#)File:            $RCSfile: scc.test,v $
+@(#)Version:         $Revision: 1.6 $
+@(#)Last changed:    $Date: 2007/12/14 23:45:02 $
+@(#)Purpose:         Test file for program SCC
+@(#)Author:          J Leffler
+@(#)Copyright:       (C) JLSS 1997,2003
+@(#)Product:         SCC Version 4.04.20081127 (2008-11-27)
+*/
+
+/*TABSTOP=4*/
+
+// -- C++ comment
+
+/*
+Multiline C-style comment
+#ifndef lint
+static const char sccs[] = "@(#)$Id: scc.test,v 1.6 2007/12/14 23:45:02 jleffler Exp $";
+#endif
+*/
+
+/*
+Multi-line C-style comment
+with embedded /* in line %C% which should generate a warning
+if scc is run with the -w option
+Two comment starts /* embedded /* in line %C% should generate one warning
+*/
+
+/* Comment */ Non-comment /* Comment Again */ Non-Comment Again /*
+Comment again on the next line */
+
+// A C++ comment with a C-style comment marker /* in the middle
+This is plain text under C++ (C99) commenting - but comment body otherwise
+// A C++ comment with a C-style comment end marker */ in the middle
+
+The following C-style comment end marker should generate a warning
+if scc is run with the -w option
+*/
+Two of these */ generate */ one warning
+
+It is possible to have both warnings on a single line.
+Eg:
+*/ /* /* */ */
+
+SCC has been trained to handle 'q' single quotes in most of
+the aberrant forms that can be used.  '\0', '\\', '\'', '\\
+n' (a valid variant on '\n'), because the backslash followed
+by newline is elided by the token scanning code in CPP before
+any other processing occurs.
+
+This is a legitimate equivalent to '\n' too: '\
+\n', again because the backslash/newline processing occurs early.
+
+The non-portable 'ab', '/*', '*/', '//' forms are handled OK too.
+
+The following quote should generate a warning from SCC; a
+compiler would not accept it.  '
+\n'
+
+" */ /* SCC has been trained to know about strings /* */ */"!
+"\"Double quotes embedded in strings, \\\" too\'!"
+"And \
+newlines in them"
+
+"And escaped double quotes at the end of a string\""
+
+aa '\\
+n' OK
+aa "\""
+aa "\
+\n"
+
+This is followed by C++/C99 comment number 1.
+// C++/C99 comment with \
+continuation character \
+on three source lines (this should not be seen with the -C flag)
+The C++/C99 comment number 1 has finished.
+
+This is followed by C++/C99 comment number 2.
+/\
+/\
+C++/C99 comment (this should not be seen with the -C flag)
+The C++/C99 comment number 2 has finished.
+
+This is followed by regular C comment number 1.
+/\
+*\
+Regular
+comment
+*\
+/
+The regular C comment number 1 has finished.
+
+/\
+\/ This is not a C++/C99 comment!
+
+This is followed by C++/C99 comment number 3.
+/\
+\
+\
+/ But this is a C++/C99 comment!
+The C++/C99 comment number 3 has finished.
+
+/\
+\* This is not a C or C++  comment!
+
+This is followed by regular C comment number 2.
+/\
+*/ This is a regular C comment *\
+but this is just a routine continuation *\
+and that was not the end either - but this is *\
+\
+/
+The regular C comment number 2 has finished.
+
+This is followed by regular C comment number 3.
+/\
+\
+\
+\
+* C comment */
+The regular C comment number 3 has finished.
+
+More double quoted string stuff:
+
+    if (logtable_out)
+    {
+	sprintf(logtable_out,
+		"insert into %s (bld_id, err_operation, err_expected, err_sql_stmt, err_sql_state)" 
+		" values (\"%s\", \"%s\", \"%s\", \"", str_logtable, blade, operation, expected);
+	/* watch out for embedded double quotes. */
+    }
+
+
+/* Non-terminated C-style comment at the end of the file

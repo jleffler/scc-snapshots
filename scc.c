@@ -1,7 +1,7 @@
 /*
 @(#)File:           $RCSfile: scc.c,v $
-@(#)Version:        $Revision: 4.3 $
-@(#)Last changed:   $Date: 2007/12/14 23:44:09 $
+@(#)Version:        $Revision: 4.4 $
+@(#)Last changed:   $Date: 2008/08/09 20:15:06 $
 @(#)Purpose:        Strip C comments
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1991,1993,1997-98,2003,2005
@@ -41,7 +41,7 @@ static int nline = 0;	/* Line counter */
 static const char usestr[] = "[-wCV] [file ...]";
 
 #ifndef lint
-static const char rcs[] = "@(#)$Id: scc.c,v 4.3 2007/12/14 23:44:09 jleffler Exp $";
+static const char rcs[] = "@(#)$Id: scc.c,v 4.4 2008/08/09 20:15:06 jleffler Exp $";
 #endif
 
 static int getch(FILE *fp)
@@ -70,12 +70,12 @@ static int peek(FILE *fp)
 
 static void warning(const char *str, const char *file, int line)
 {
-	err_report(ERR_REM, ERR_STAT, "%s:%ld: %s\n", file, line, str);
+	err_report(ERR_REM, ERR_STAT, "%s:%d: %s\n", file, line, str);
 }
 
 static void warning2(const char *s1, const char *s2, const char *file, int line)
 {
-	err_report(ERR_REM, ERR_STAT, "%s:%ld: %s %s\n", file, line, s1, s2);
+	err_report(ERR_REM, ERR_STAT, "%s:%d: %s %s\n", file, line, s1, s2);
 }
 
 static void endquote(char q, FILE *fp, char *fn, const char *msg)
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
 			Cflag = 1;
 			break;
 		case 'V':
-			err_version("SCC", "$Revision: 4.3 $ ($Date: 2007/12/14 23:44:09 $)");
+			err_version("SCC", "$Revision: 4.4 $ ($Date: 2008/08/09 20:15:06 $)");
 			break;
 		default:
 			err_usage(usestr);

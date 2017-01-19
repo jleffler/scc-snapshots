@@ -1,0 +1,32 @@
+.\" @(#)$Id: scc.1,v 1.1 2008/11/27 22:49:18 jleffler Exp $
+.\" @(#)Manual page: Application -- Part of application
+.ds fC "Version: $Revision: 1.1 $ ($Date: 2008/11/27 22:49:18 $)
+.TH PROG 1S "JLSS UNIX Tools"
+.SH NAME
+scc \(em Strip C or C++ comments from source code
+.SH SYNOPSIS
+\fBscc\fP [-wCV] [file ...]
+.SH DESCRIPTION
+The \fBscc\fP program strips C comments from source code.
+By default, it only eliminates classic C comments between `\*c/*\*d' and `\*c*/\*d'.
+By specifying `\*c-C\*d', you can also eliminate C++ and C99 comments between `\*c//\*d' and end of line.
+By specifying `\*c-w\*d', you can obtain warnings about nested C comments - that is, about `\*c/*\*d' appearing inside another classic C comment.
+The `\*c-V\*d' option prints the version information and exits.
+.P
+The \fBscc\*d' program is aware of the intricacies of backslash-newline, and single-quoted characters, and double-quoted character strings.
+Consequently, it correctly handles such bizarre comments as this:
+.P
+\*c/\e
+.br
+*\e
+.br
+*\e
+.br
+/\*d
+.br
+.SH AUTHOR
+Jonathan Leffler
+.br
+JLSS
+.br
+27th November 2008

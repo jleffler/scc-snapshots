@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: stderr.h,v $
-@(#)Version:        $Revision: 8.21 $
-@(#)Last changed:   $Date: 2008/04/07 10:55:46 $
+@(#)Version:        $Revision: 8.22 $
+@(#)Last changed:   $Date: 2008/08/09 20:12:49 $
 @(#)Purpose:        Header file for standard error functions
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1989-93,1996-99,2003,2005-08
-@(#)Product:        :PRODUCT:
+@(#)Product:        SCC Version 4.04.20081127 (2008-11-27)
 */
 
 #ifndef STDERR_H
@@ -14,7 +14,7 @@
 #ifdef MAIN_PROGRAM
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
-const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 8.21 2008/04/07 10:55:46 jleffler Exp $";
+const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 8.22 2008/08/09 20:12:49 jleffler Exp $";
 #endif /* lint */
 #endif
 
@@ -88,6 +88,7 @@ extern void err_error(const char *format, ...) PRINTFLIKE(1,2) NORETURN();
 extern void err_error1(const char *s1) NORETURN();
 extern void err_error2(const char *s1, const char *s2) NORETURN();
 extern void err_help(const char *use_str, const char *hlp_str) NORETURN();
+extern void err_helplist(const char *use_str, const char * const *help_list) NORETURN();
 extern void err_internal(const char *function, const char *msg) NORETURN();
 extern void err_logmsg(FILE *fp, int flags, int estat, const char *format, ...) PRINTFLIKE(4,5);
 extern void err_print(int flags, int estat, const char *format, va_list args);

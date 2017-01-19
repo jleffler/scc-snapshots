@@ -5,7 +5,7 @@
 @(#)Purpose:        Standard File Filter
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1987-89,1991,1993,1996-99,2002-05,2008
-@(#)Product:        :PRODUCT:
+@(#)Product:        SCC Version 4.04.20081127 (2008-11-27)
 */
 
 /*TABSTOP=4*/

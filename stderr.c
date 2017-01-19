@@ -5,7 +5,7 @@
 @(#)Purpose:        Error reporting routines
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1988-91,1996-99,2001,2003,2005-08
-@(#)Product:        :PRODUCT:
+@(#)Product:        SCC Version 4.04.20081127 (2008-11-27)
 */
 
 /*TABSTOP=4*/
