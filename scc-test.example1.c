@@ -1,21 +1,21 @@
 /*
-@(#)File:            $RCSfile: scc.test,v $
-@(#)Version:         $Revision: 1.6 $
-@(#)Last changed:    $Date: 2007/12/14 23:45:02 $
-@(#)Purpose:         Test file for program SCC
-@(#)Author:          J Leffler
-@(#)Copyright:       (C) JLSS 1997,2003
-@(#)Product:         SCC Version 5.05 (2012-01-23)
+@(#)File:           $RCSfile: scc-test.example1.c,v $
+@(#)Version:        $Revision: 1.10 $
+@(#)Last changed:   $Date: 2015/08/17 04:14:48 $
+@(#)Purpose:        Test SCC on core functionality
+@(#)Author:         J Leffler
+@(#)Copyright:      (C) JLSS 1997,2003,2007,2013-15
+@(#)Product:        SCC Version 6.16 (2016-01-19)
 */
 
 /*TABSTOP=4*/
 
-// -- C++ comment
+// -- C++ comment at start of line
 
 /*
 Multiline C-style comment
 #ifndef lint
-static const char sccs[] = "@(#)$Id: scc.test,v 1.6 2007/12/14 23:45:02 jleffler Exp $";
+static const char sccs[] = "@(#)$Id: scc-test.example1.c,v 1.10 2015/08/17 04:14:48 jleffler Exp $";
 #endif
 */
 
@@ -53,6 +53,12 @@ This is a legitimate equivalent to '\n' too: '\
 
 The non-portable 'ab', '/*', '*/', '//' forms are handled OK too.
 
+Note that C++ comments can appear   // at the end of a line
+And the issue then is how should    // the newline be handled
+when the options -c or -n or both   // or neither are in use
+Should the newline be treated as    // part of the comment
+or should it be deleted so that     // text is run on altogether
+
 The following quote should generate a warning from SCC; a
 compiler would not accept it.  '
 \n'
@@ -61,6 +67,11 @@ compiler would not accept it.  '
 "\"Double quotes embedded in strings, \\\" too\'!"
 "And \
 newlines in them"
+"/* This is not a comment */"
+"// This is not a comment either"
+'/*' No comment there
+'//' No comment there
+'*/' No end comment there
 
 "And escaped double quotes at the end of a string\""
 
@@ -120,6 +131,14 @@ This is followed by regular C comment number 3.
 \
 * C comment */
 The regular C comment number 3 has finished.
+
+Note that \u1234 and \U0010FFF0 are legitimate Unicode characters
+(officially universal character names) that could appear in an
+id\u0065ntifier, a '\u0065' character constant, or in a "char\u0061cter\
+ string".  Since these are mapped long after comments are eliminated,
+they cannot affect the interpretation of /* comments */.  In particular,
+none of \u0002A.  \U0000002A, \u002F and \U0000002F ever constitute part
+of a comment delimiter ('*' or '/').
 
 More double quoted string stuff:
 

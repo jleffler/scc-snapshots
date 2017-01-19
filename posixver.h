@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: posixver.h,v $
-@(#)Version:        $Revision: 1.1 $
-@(#)Last changed:   $Date: 2010/08/29 00:27:48 $
+@(#)Version:        $Revision: 1.3 $
+@(#)Last changed:   $Date: 2015/07/05 21:28:18 $
 @(#)Purpose:        Request appropriate POSIX and X/Open Support
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 2010
-@(#)Product:        SCC Version 5.05 (2012-01-23)
+@(#)Copyright:      (C) JLSS 2010,2015
+@(#)Product:        SCC Version 6.16 (2016-01-19)
 */
 
 /*TABSTOP=4*/
@@ -25,8 +25,10 @@
 /* _XOPEN_SOURCE 500 is loosely equivalent to _POSIX_C_SOURCE 199506L */
 
 #if !defined(_XOPEN_SOURCE) && !defined(_POSIX_C_SOURCE)
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600   /* SUS v3, POSIX 1003.1 2004 (POSIX 2001 + Corrigenda) */
+#if defined(__cplusplus)
+#define _XOPEN_SOURCE 700   /* SUS v4, POSIX 1003.1 2008/13 (POSIX 2008/13) */
+#elif __STDC_VERSION__ >= 199901L
+#define _XOPEN_SOURCE 700   /* SUS v4, POSIX 1003.1 2008/13 (POSIX 2008/13) */
 #else
 #define _XOPEN_SOURCE 500   /* SUS v2, POSIX 1003.1 1997 */
 #endif /* __STDC_VERSION__ */

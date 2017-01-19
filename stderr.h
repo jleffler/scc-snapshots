@@ -1,28 +1,29 @@
 /*
 @(#)File:           $RCSfile: stderr.h,v $
-@(#)Version:        $Revision: 10.3 $
-@(#)Last changed:   $Date: 2011/11/28 04:49:24 $
+@(#)Version:        $Revision: 10.10 $
+@(#)Last changed:   $Date: 2015/10/14 23:12:19 $
 @(#)Purpose:        Header file for standard error functions
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1989-93,1996-99,2003,2005-11
-@(#)Product:        SCC Version 5.05 (2012-01-23)
+@(#)Copyright:      (C) JLSS 1989-93,1996-99,2003,2005-11,2015
+@(#)Product:        SCC Version 6.16 (2016-01-19)
 */
 
-#ifndef STDERR_H
+#if !defined(STDERR_H)
 #define STDERR_H
 
-#ifdef MAIN_PROGRAM
-#ifndef lint
+#if defined(MAIN_PROGRAM)
+#if !defined(lint)
 /* Prevent over-aggressive optimizers from eliminating ID string */
-const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.3 2011/11/28 04:49:24 jleffler Exp $";
+extern const char jlss_id_stderr_h[];
+const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.10 2015/10/14 23:12:19 jleffler Exp $";
 #endif /* lint */
 #endif
 
-#ifdef HAVE_CONFIG_H
+#if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef JLSS_STDERR
+#if defined(JLSS_STDERR)
 #undef  USE_STDERR_FILEDESC
 #define USE_STDERR_FILEDESC
 #if defined(HAVE_SYSLOG) && defined(HAVE_SYSLOG_H)
@@ -34,28 +35,41 @@ const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.3 2011/11/28 04:49:24 jl
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifdef __GNUC__
+#if !defined(NORETURN)
+#if __STDC_VERSION__ >= 201112L
+#define NORETURN      _Noreturn
+#elif defined(__GNUC__)
+#define NORETURN      __attribute__((noreturn))
+#else
+#define NORETURN      /* If only */
+#endif /* __STDC_VERSION__ || __GNUC__ */
+#endif /* NORETURN */
+
+#if !defined(PRINTFLIKE)
+#if defined(__GNUC__)
 #define PRINTFLIKE(n,m) __attribute__((format(printf,n,m)))
-#define NORETURN()      __attribute__((noreturn))
 #else
 #define PRINTFLIKE(n,m) /* If only */
-#define NORETURN()      /* If only */
 #endif /* __GNUC__ */
+#endif /* PRINTFLIKE */
 
 /* -- Definitions for error handling */
 
 enum { ERR_STAT    = 1 };           /* Default exit status     */
 
-enum { ERR_DEFAULT = 0x0000 };      /* Default flag             */
-enum { ERR_NOFLUSH = 0x0001 };      /* Do not flush open files  */
-enum { ERR_EXIT    = 0x0004 };      /* Exit  -- do not return   */
-enum { ERR_ABORT   = 0x0008 };      /* Abort -- do not return   */
-enum { ERR_STAMP   = 0x0020 };      /* Timestamp messages       */
-enum { ERR_NOARG0  = 0x0040 };      /* Do not print arg0 prefix */
-enum { ERR_PID     = 0x0080 };      /* Include pid=nnnnn info   */
-enum { ERR_ERRNO   = 0x0100 };      /* Include system error     */
+enum { ERR_DEFAULT = 0x0000 };      /* Default flag                      */
+enum { ERR_NOFLUSH = 0x0001 };      /* Do not flush open files           */
+enum { ERR_EXIT    = 0x0004 };      /* Exit  -- do not return            */
+enum { ERR_ABORT   = 0x0008 };      /* Abort -- do not return            */
+enum { ERR_STAMP   = 0x0020 };      /* Timestamp messages (whole second) */
+enum { ERR_NOARG0  = 0x0040 };      /* Do not print arg0 prefix          */
+enum { ERR_PID     = 0x0080 };      /* Include pid=nnnnn info            */
+enum { ERR_ERRNO   = 0x0100 };      /* Include system error              */
+enum { ERR_MILLI   = 0x0200 };      /* Timestamp messages (millisecond)  */
+enum { ERR_MICRO   = 0x0400 };      /* Timestamp messages (microsecond)  */
+enum { ERR_NANO    = 0x0800 };      /* Timestamp messages (nanosecond)   */
 
-#ifdef USE_STDERR_SYSLOG
+#if defined(USE_STDERR_SYSLOG)
 /* Definitions related to using syslog */
 enum { ERR_LOG_EMERG    = 0x01000 };    /* system is unusable */
 enum { ERR_LOG_ALERT    = 0x02000 };    /* action must be taken immediately */
@@ -85,22 +99,26 @@ enum { ERR_MAXLEN_ARGV0 = 63 };
 
 /* -- Global definitions */
 
-extern const char  err_format1[];    /* "%s\n"    - for one string argument */
-extern const char  err_format2[];    /* "%s %s\n" - for two string arguments */
-
 extern const char *err_getarg0(void);
 extern void        err_setarg0(const char *argv0);
 
 extern FILE       *err_stderr(FILE *fp);
 extern const char *err_rcs_string(const char *s, char *buffer, size_t buflen);
 
-extern void err_abort(const char *format, ...) PRINTFLIKE(1,2) NORETURN();
-extern void err_error(const char *format, ...) PRINTFLIKE(1,2) NORETURN();
-extern void err_error1(const char *s1) NORETURN();
-extern void err_error2(const char *s1, const char *s2) NORETURN();
-extern void err_help(const char *use_str, const char *hlp_str) NORETURN();
-extern void err_helplist(const char *use_str, const char * const *help_list) NORETURN();
-extern void err_internal(const char *function, const char *format, ...) PRINTFLIKE(2,3) NORETURN();
+extern NORETURN void err_abort(const char *format, ...) PRINTFLIKE(1,2);
+extern NORETURN void err_error(const char *format, ...) PRINTFLIKE(1,2);
+extern NORETURN void err_error1(const char *s1);
+extern NORETURN void err_error2(const char *s1, const char *s2);
+extern NORETURN void err_help(const char *use_str, const char *hlp_str);
+extern NORETURN void err_helplist(const char *use_str, const char * const *help_list);
+extern NORETURN void err_internal(const char *function, const char *format, ...) PRINTFLIKE(2,3);
+extern NORETURN void err_syserr(const char *format, ...) PRINTFLIKE(1,2);
+extern NORETURN void err_syserr1(const char *s1);
+extern NORETURN void err_syserr2(const char *s1, const char *s2);
+extern NORETURN void err_syserror(int errnum, const char *format, ...) PRINTFLIKE(2,3);
+extern NORETURN void err_usage(const char *usestr);
+extern NORETURN void err_version(const char *program, const char *verinfo);
+
 extern void err_logmsg(FILE *fp, int flags, int estat, const char *format, ...) PRINTFLIKE(4,5);
 extern void err_print(int flags, int estat, const char *format, va_list args);
 extern void err_printversion(const char *program, const char *verinfo);
@@ -108,22 +126,18 @@ extern void err_remark(const char *format, ...) PRINTFLIKE(1,2);
 extern void err_remark1(const char *s1);
 extern void err_remark2(const char *s1, const char *s2);
 extern void err_report(int flags, int estat, const char *format, ...) PRINTFLIKE(3,4);
-extern void err_syserr(const char *format, ...) PRINTFLIKE(1,2) NORETURN();
-extern void err_syserr1(const char *s1) NORETURN();
-extern void err_syserr2(const char *s1, const char *s2) NORETURN();
 extern void err_sysrem(const char *format, ...) PRINTFLIKE(1,2);
 extern void err_sysrem1(const char *s1);
 extern void err_sysrem2(const char *s1, const char *s2);
-extern void err_usage(const char *usestr) NORETURN();
-extern void err_version(const char *program, const char *verinfo) NORETURN();
+extern void err_sysremark(int errnum, const char *format, ...) PRINTFLIKE(2,3);
 
 extern int  err_getlogopts(void);           /* Get default log options */
 extern int  err_setlogopts(int new_opts);   /* Set default log options */
 
-#ifdef USE_STDERR_FILEDESC
+#if defined(USE_STDERR_FILEDESC)
 extern int  err_use_fd(int fd);             /* Use file descriptor */
 #endif /* USE_STDERR_FILEDESC */
-#ifdef USE_STDERR_SYSLOG
+#if defined(USE_STDERR_SYSLOG)
 /* In case of doubt, use zero for both logopts and facility */
 extern int  err_use_syslog(int logopts, int facility);  /* Configure/use syslog() */
 #endif /* USE_STDERR_SYSLOG */

@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: filter.h,v $
-@(#)Version:        $Revision: 2008.1 $
-@(#)Last changed:   $Date: 2008/02/11 07:39:08 $
+@(#)Version:        $Revision: 2015.2 $
+@(#)Last changed:   $Date: 2015/02/17 04:51:48 $
 @(#)Purpose:        Header for filter functions
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1993,1995-98,2003-04,2006,2008
-@(#)Product:        SCC Version 5.05 (2012-01-23)
+@(#)Copyright:      (C) JLSS 1993,1995-98,2003-04,2006,2008,2014-15
+@(#)Product:        SCC Version 6.16 (2016-01-19)
 */
 
 /*TABSTOP=4*/
@@ -16,7 +16,8 @@
 #ifdef MAIN_PROGRAM
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
-const char jlss_id_filter_h[] = "@(#)$Id: filter.h,v 2008.1 2008/02/11 07:39:08 jleffler Exp $";
+extern const char jlss_id_filter_h[];
+const char jlss_id_filter_h[] = "@(#)$Id: filter.h,v 2015.2 2015/02/17 04:51:48 jleffler Exp $";
 #endif /* lint */
 #endif /* MAIN_PROGRAM */
 
@@ -32,10 +33,20 @@ const char jlss_id_filter_h[] = "@(#)$Id: filter.h,v 2008.1 2008/02/11 07:39:08 
 typedef void (*ClassicFilter)(FILE *ifp, char *fn);
 extern void filter(int argc, char **argv, int optnum, ClassicFilter function);
 
+/* No file name at all; no error status feedback */
+/* Source: filtera.c */
+typedef void (*ClassicFilterAnon)(FILE *ifp);
+extern void filter_anon(int argc, char **argv, int optnum, ClassicFilterAnon function);
+
 /* Modern mode 1 - without output file specified */
 /* Source: stdfilter.c */
 typedef int (*StdoutFilter)(FILE *ifp, const char *fn);
 extern int filter_stdout(int argc, char **argv, int optnum, StdoutFilter function);
+
+/* Modern mode 1 - without output file specified */
+/* Source: stdfiltera.c */
+typedef int (*StdoutFilterAnon)(FILE *ifp);
+extern int filter_stdout_anon(int argc, char **argv, int optnum, StdoutFilterAnon function);
 
 /* Modern mode 2 - with output file specified */
 /* NB: OutputFilter is compatible with AFF code */
@@ -43,10 +54,36 @@ extern int filter_stdout(int argc, char **argv, int optnum, StdoutFilter functio
 typedef int (*OutputFilter)(FILE *ifp, const char *fn, FILE *ofp);
 extern int filter_output(int argc, char **argv, int optnum, OutputFilter function);
 
+/* Modern mode 2 - with output file specified */
+/* Source: outfiltera.c */
+typedef int (*OutputFilterAnon)(FILE *ifp, FILE *ofp);
+extern int filter_output_anon(int argc, char **argv, int optnum, OutputFilterAnon function);
+
+/* Set output file for filter_output() and filter_output_anon() */
+/* Returns previous value of the file (does not set new value if passed null pointer). */
+/* Source: outfilterso.c */
+extern FILE *filter_setoutput(FILE *out);
+
 /* Standard I/O error check code */
-/* Used internally by filter_stdout() and filter_output(). */
+/* Used internally by filter_stdout(), filter_stdout_anon(), filter_output() and filter_output_anon(). */
 /* Not normally used by client programs. */
 /* Source: filterio.c */
 extern int filter_io_check(FILE *ifp, const char *ifn, FILE *ofp);
+
+/*
+** Number of files to process: enables support for grep-like prefixing
+** of output with file name - or not.
+** To print file names before output lines, use:
+**    if (filter_numfiles() > 1)
+**        printf("%s:%s\n", filename, line);
+**    else
+**        puts(line);
+** Call filter_setnumfiles(0) to reset to default state (seldom needed).
+** Call filter_setnumfiles(1) to suppress headings (grep -h).
+** Call filter_setnumfiles(2) to force headings (grep -H).
+** Source: filterio.c
+*/
+extern int filter_numfiles(void);
+extern void filter_setnumfiles(int num);
 
 #endif /* FILTER_H */

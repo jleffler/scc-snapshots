@@ -1,4 +1,4 @@
-SCC Version 5.05 (2012-01-23)
+SCC Version 6.16 (2016-01-19)
 
 This is the source code to a program which is licenced under the terms of the
 GNU General Public License Version 3
@@ -12,4 +12,4 @@ Ideally, the build process should simply be a question of running:
 If you have questions or comments, please contact the author:
 Jonathan Leffler via email at jonathan.leffler@gmail.com
 
-Package created: 2012-01-23
+Package created: 2016-01-19

@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: filter.c,v $
-@(#)Version:        $Revision: 3.15 $
-@(#)Last changed:   $Date: 2008/02/11 08:44:50 $
-@(#)Purpose:        Standard File Filter
+@(#)Version:        $Revision: 2015.2 $
+@(#)Last changed:   $Date: 2015/02/17 04:53:03 $
+@(#)Purpose:        Classic File Filter
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1987-89,1991,1993,1996-99,2002-05,2008
-@(#)Product:        SCC Version 5.05 (2012-01-23)
+@(#)Copyright:      (C) JLSS 1987-89,1991,1993,1996-99,2002-05,2008,2012,2014-15
+@(#)Product:        SCC Version 6.16 (2016-01-19)
 */
 
 /*TABSTOP=4*/
@@ -15,16 +15,18 @@
 #include <string.h>
 #include <errno.h>
 
-static char *no_args[] = { "-", 0 };
+static char  dash[] = "-";
+static char *no_args[] = { dash, 0 };
 static const char em_invoptnum[] = "invalid (negative) option number";
 
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
-const char jlss_id_filter_c[] = "@(#)$Id: filter.c,v 3.15 2008/02/11 08:44:50 jleffler Exp $";
+extern const char jlss_id_filter_c[];
+const char jlss_id_filter_c[] = "@(#)$Id: filter.c,v 2015.2 2015/02/17 04:53:03 jleffler Exp $";
 #endif /* lint */
 
 /*
-    Purpose:    Standard File Filter
+    Purpose:    Classic File Filter
 
     Maintenance Log
     ---------------
@@ -36,6 +38,7 @@ const char jlss_id_filter_c[] = "@(#)$Id: filter.c,v 3.15 2008/02/11 08:44:50 jl
     31/03/1998  JL    Add support for continuing on error opening a file
     22/08/2003  JL    Remove filter_setcontinue - always continue on error.
     18/12/2004  JL    Rename Filter to ClassicFilter; do not modify argv.
+    27/12/2014  JL    Support filter_numfiles()
 
     Arguments
     ---------
@@ -57,9 +60,8 @@ const char jlss_id_filter_c[] = "@(#)$Id: filter.c,v 3.15 2008/02/11 08:44:50 jl
 
 void filter(int argc, char **argv, int optnum, ClassicFilter function)
 {
-    int             i;
-    FILE           *fp;
-    char           *file;
+    int   i;
+    FILE *fp;
 
     if (optnum < 0)
         err_abort(em_invoptnum);
@@ -69,18 +71,18 @@ void filter(int argc, char **argv, int optnum, ClassicFilter function)
         argv = no_args;
         optnum = 0;
     }
+    filter_setnumfiles(argc - optnum);
 
     for (i = optnum; i < argc; i++)
     {
         if (strcmp(argv[i], "-") == 0)
         {
-            file = "(standard input)";
-            (*function)(stdin, file);
+            char name[] = "(standard input)";
+            (*function)(stdin, name);
         }
         else if ((fp = fopen(argv[i], "r")) != NULL)
         {
-            file = argv[i];
-            (*function)(fp, file);
+            (*function)(fp, argv[i]);
             fclose(fp);
         }
         else
@@ -98,12 +100,12 @@ void filter(int argc, char **argv, int optnum, ClassicFilter function)
 */
 
 #include <ctype.h>
-#include "getopt.h"
+#include <unistd.h>
 
 static void fcopy(FILE *f1, FILE *f2)
 {
-    char            buffer[BUFSIZ];
-    int             n;
+    char   buffer[BUFSIZ];
+    size_t n;
 
     while ((n = fread(buffer, sizeof(char), sizeof(buffer), f1)) > 0)
     {
@@ -114,7 +116,7 @@ static void fcopy(FILE *f1, FILE *f2)
 
 static void vis(FILE *fp, char *fn)
 {
-    int             c;
+    int c;
 
     fprintf(stdout, "%s:\n", fn);
     while ((c = getc(fp)) != EOF)
@@ -134,7 +136,7 @@ static void cat(FILE *fp, char *fn)
     fcopy(fp, stdout);
 }
 
-int             main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int             opt;
     ClassicFilter   f = cat;
@@ -146,7 +148,7 @@ int             main(int argc, char **argv)
         if (opt == 'v')
             f = vis;
         else if (opt == 'V')
-            err_version("FILTER", "$Revision: 3.15 $ ($Date: 2008/02/11 08:44:50 $)");
+            err_version("FILTER", "$Revision: 2015.2 $ ($Date: 2015/02/17 04:53:03 $)");
         else
             err_usage("[-vV] [file ...]");
     }
