@@ -6,7 +6,7 @@ This repository contains the code for the SCC (Strip C Comments) program describ
 
 There are currently 6 releases:
 * 4.03 (2008-06-07)
-* 4.04 (2010-02-14)
+* 4.04 (2008-11-27)
 * 5.05 (2012-01-23)
 * 6.16 (2016-01-19)
 * 6.50 (2016-06-12)
