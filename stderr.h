@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: stderr.h,v $
-@(#)Version:        $Revision: 8.22 $
-@(#)Last changed:   $Date: 2008/08/09 20:12:49 $
+@(#)Version:        $Revision: 10.3 $
+@(#)Last changed:   $Date: 2011/11/28 04:49:24 $
 @(#)Purpose:        Header file for standard error functions
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1989-93,1996-99,2003,2005-08
-@(#)Product:        SCC Version 4.04.20081127 (2008-11-27)
+@(#)Copyright:      (C) JLSS 1989-93,1996-99,2003,2005-11
+@(#)Product:        SCC Version 5.05 (2012-01-23)
 */
 
 #ifndef STDERR_H
@@ -14,13 +14,22 @@
 #ifdef MAIN_PROGRAM
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
-const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 8.22 2008/08/09 20:12:49 jleffler Exp $";
+const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.3 2011/11/28 04:49:24 jleffler Exp $";
 #endif /* lint */
 #endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
+
+#ifdef JLSS_STDERR
+#undef  USE_STDERR_FILEDESC
+#define USE_STDERR_FILEDESC
+#if defined(HAVE_SYSLOG) && defined(HAVE_SYSLOG_H)
+#undef  USE_STDERR_SYSLOG
+#define USE_STDERR_SYSLOG
+#endif /* HAVE_SYSLOG && HAVE_SYSLOG_H */
+#endif /* JLSS_STDERR */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -46,18 +55,20 @@ enum { ERR_NOARG0  = 0x0040 };      /* Do not print arg0 prefix */
 enum { ERR_PID     = 0x0080 };      /* Include pid=nnnnn info   */
 enum { ERR_ERRNO   = 0x0100 };      /* Include system error     */
 
+#ifdef USE_STDERR_SYSLOG
 /* Definitions related to using syslog */
 enum { ERR_LOG_EMERG    = 0x01000 };    /* system is unusable */
 enum { ERR_LOG_ALERT    = 0x02000 };    /* action must be taken immediately */
 enum { ERR_LOG_CRIT     = 0x04000 };    /* critical conditions */
 enum { ERR_LOG_ERR      = 0x08000 };    /* error conditions */
 enum { ERR_LOG_WARNING  = 0x10000 };    /* warning conditions */
-enum { ERR_LOG_NOTICE   = 0x20000 };    /* normal but signification condition */
+enum { ERR_LOG_NOTICE   = 0x20000 };    /* normal but significant condition */
 enum { ERR_LOG_INFO     = 0x40000 };    /* informational */
 enum { ERR_LOG_DEBUG    = 0x80000 };    /* debug-level messages */
 enum { ERR_LOG_LEVEL_HI = ERR_LOG_EMERG|ERR_LOG_ALERT|ERR_LOG_CRIT|ERR_LOG_ERR };
 enum { ERR_LOG_LEVEL_LO = ERR_LOG_WARNING|ERR_LOG_NOTICE|ERR_LOG_INFO|ERR_LOG_DEBUG };
 enum { ERR_LOG_LEVEL    = ERR_LOG_LEVEL_HI|ERR_LOG_LEVEL_LO };
+#endif /* USE_STDERR_SYSLOG */
 
 /* -- Standard combinations of flags */
 
@@ -74,13 +85,13 @@ enum { ERR_MAXLEN_ARGV0 = 63 };
 
 /* -- Global definitions */
 
-extern const char err_format1[];    /* "%s\n"    - for one string argument */
-extern const char err_format2[];    /* "%s %s\n" - for two string arguments */
+extern const char  err_format1[];    /* "%s\n"    - for one string argument */
+extern const char  err_format2[];    /* "%s %s\n" - for two string arguments */
 
 extern const char *err_getarg0(void);
-extern void err_setarg0(const char *argv0);
+extern void        err_setarg0(const char *argv0);
 
-extern FILE *err_stderr(FILE *fp);
+extern FILE       *err_stderr(FILE *fp);
 extern const char *err_rcs_string(const char *s, char *buffer, size_t buflen);
 
 extern void err_abort(const char *format, ...) PRINTFLIKE(1,2) NORETURN();
@@ -89,7 +100,7 @@ extern void err_error1(const char *s1) NORETURN();
 extern void err_error2(const char *s1, const char *s2) NORETURN();
 extern void err_help(const char *use_str, const char *hlp_str) NORETURN();
 extern void err_helplist(const char *use_str, const char * const *help_list) NORETURN();
-extern void err_internal(const char *function, const char *msg) NORETURN();
+extern void err_internal(const char *function, const char *format, ...) PRINTFLIKE(2,3) NORETURN();
 extern void err_logmsg(FILE *fp, int flags, int estat, const char *format, ...) PRINTFLIKE(4,5);
 extern void err_print(int flags, int estat, const char *format, va_list args);
 extern void err_printversion(const char *program, const char *verinfo);
@@ -106,9 +117,16 @@ extern void err_sysrem2(const char *s1, const char *s2);
 extern void err_usage(const char *usestr) NORETURN();
 extern void err_version(const char *program, const char *verinfo) NORETURN();
 
-extern int  err_use_fd(int fd);          /* Use file descriptor */
-extern int  err_use_syslog(int logopts, int facility);  /* Configure/use syslog() */
+extern int  err_getlogopts(void);           /* Get default log options */
+extern int  err_setlogopts(int new_opts);   /* Set default log options */
+
+#ifdef USE_STDERR_FILEDESC
+extern int  err_use_fd(int fd);             /* Use file descriptor */
+#endif /* USE_STDERR_FILEDESC */
+#ifdef USE_STDERR_SYSLOG
 /* In case of doubt, use zero for both logopts and facility */
+extern int  err_use_syslog(int logopts, int facility);  /* Configure/use syslog() */
+#endif /* USE_STDERR_SYSLOG */
 
 /*
 ** JL 2003-07-31: Security Note.

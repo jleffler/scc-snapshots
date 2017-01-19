@@ -1,19 +1,36 @@
-.\" @(#)$Id: scc.1,v 1.1 2008/11/27 22:49:18 jleffler Exp $
-.\" @(#)Manual page: Application -- Part of application
-.ds fC "Version: $Revision: 1.1 $ ($Date: 2008/11/27 22:49:18 $)
+.\" @(#)$Id: scc.1,v 1.2 2012/01/23 19:22:56 jleffler Exp $
+.\" @(#)Manual page: SCC - Strip C Comments
+.ds fC "Version: $Revision: 1.2 $ ($Date: 2012/01/23 19:22:56 $)
 .TH PROG 1S "JLSS UNIX Tools"
 .SH NAME
-scc \(em Strip C or C++ comments from source code
+scc \(em Strip C comments from source code
 .SH SYNOPSIS
-\fBscc\fP [-wCV] [file ...]
+\fBscc\fP [-chnwCV][-s rep][-q rep] [file ...]
 .SH DESCRIPTION
 The \fBscc\fP program strips C comments from source code.
-By default, it only eliminates classic C comments between `\*c/*\*d' and `\*c*/\*d'.
-By specifying `\*c-C\*d', you can also eliminate C++ and C99 comments between `\*c//\*d' and end of line.
-By specifying `\*c-w\*d', you can obtain warnings about nested C comments - that is, about `\*c/*\*d' appearing inside another classic C comment.
-The `\*c-V\*d' option prints the version information and exits.
+By default, it eliminates both classic C comments between `\*c/*\*d' and
+`\*c*/\*d' and C++ and C99 comments between `\*c//\*d' and end of line.
+By specifying `\*c-C\*d', you can arrange to eliminate only classic C
+comments.
+By specifying `\*c-w\*d', you can obtain warnings about nested C
+comments - that is, about `\*c/*\*d' appearing inside another classic C
+comment.
+The `\*c-c\*d' option prints comments and not the code.
+The `\*c-n\*d' option keeps newlines in comments, so the input and
+output line counts should be the same, even though comments were
+stripped.
 .P
-The \fBscc\*d' program is aware of the intricacies of backslash-newline, and single-quoted characters, and double-quoted character strings.
+The `\*c-s rep\*d' option replaces the body of string literals with the
+single character specified by `\*crep\*d', which can simplify some forms
+of analysis.
+Similarly, the `\*d-q rep\*d' option replaces the body of character
+literals with the single character specified by `\*crep\*d'.
+.P
+The `\*c-V\*d' option prints the version information and exits.
+The `\*c-h\*d' option prints a help message and exits.
+.P
+The \fBscc\*d' program is aware of the intricacies of backslash-newline,
+and single-quoted characters, and double-quoted character strings.
 Consequently, it correctly handles such bizarre comments as this:
 .P
 \*c/\e
@@ -24,9 +41,13 @@ Consequently, it correctly handles such bizarre comments as this:
 .br
 /\*d
 .br
+.SH BUGS
+Earlier versions of \fBscc\fP used `\*c-C\*d' to enable the removal of
+C99 or C++ comments.
+The behaviour was reversed in version 5.3.
 .SH AUTHOR
 Jonathan Leffler
 .br
 JLSS
 .br
-27th November 2008
+23rd January 2012

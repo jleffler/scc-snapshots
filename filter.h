@@ -5,7 +5,7 @@
 @(#)Purpose:        Header for filter functions
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1993,1995-98,2003-04,2006,2008
-@(#)Product:        SCC Version 4.04.20081127 (2008-11-27)
+@(#)Product:        SCC Version 5.05 (2012-01-23)
 */
 
 /*TABSTOP=4*/
