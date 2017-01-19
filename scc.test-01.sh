@@ -1,25 +1,32 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-01.sh,v 1.3 2014/06/16 11:41:34 jleffler Exp $
+# @(#)$Id: scc.test-01.sh,v 1.8 2016/06/10 04:37:06 jleffler Exp $
 #
-# Test driver for SCC
+# Test driver for SCC - comparing with reference version (SCC 5.05)
+
+: ${CO:=co}
+: ${DIFF:=diff}
 
 T_SCC=./scc             # Version of SCC under test
-R_SCC=$HOME/bin/scc     # Reference version of SCC
+R_SCC=./scc-5.05        # Reference version of SCC
 
 [ -x "$T_SCC" ] || ${MAKE:-make} "$T_SCC" || exit 1
 [ -x "$R_SCC" ] || { echo "Reference version $R_SCC missing"; exit 1; }
 
+R_BASE=$(basename "$R_SCC")
+T_BASE=$(basename "$T_SCC")
+
 usage()
 {
-    echo "Usage: $(basename $0 .sh) [-q]" >&2
+    echo "Usage: $(basename $0 .sh) [-v]" >&2
     exit 1
 }
 
-while getopts q opt
+vflag=no
+while getopts v opt
 do
     case "$opt" in
-    (q) qflag=yes;;
+    (v) vflag=yes;;
     (*) usage;;
     esac
 done
@@ -58,18 +65,34 @@ pass=0
 # Don't quote file name or options - spaces need trimming
 while IFS="|" read r_opts t_opts file
 do
-    # Use printf because some echo command interpet -n
+    # Use printf because some echo commands interpet -n
     file=$(printf "%s" $file)
-    [ -f $file ] || ${CO:-co} $file || exit 1
+    [ -f $file ] || ${CO} $file || exit 1
     "$R_SCC" $r_opts $file > $tmp.1 2>$tmp.3
     "$T_SCC" $t_opts $file > $tmp.2 2>$tmp.4
-    if [ -s $tmp.1 ] && [ -s $tmp.2 ] && cmp -s $tmp.1 $tmp.2 && cmp -s $tmp.3 $tmp.4
+    # Old SCC misreported the line number when there's an unescaped
+    # newline in a character or string constant.
+    # Old SCC ignored C++ comments in C90 code, but new SCC reports
+    # 'Double slash comment used when not supported' or similar,
+    # Old SCC is run as scc-5.05; normalize error messages from new SCC
+    # to use that name too (to simplify comparisons).
+    sed -e 's/:63:/:64:/' \
+        -e '/Double slash comment used/d' \
+        -e '/Universal character names feature/d' \
+        -e "s/^$T_BASE:/$R_BASE:/" \
+        $tmp.4 > $tmp.5
+    if [ -s $tmp.1 ] && [ -s $tmp.2 ] && cmp -s $tmp.1 $tmp.2 &&
+        cmp -s $tmp.3 $tmp.5
     then
         echo "== PASS == ($r_opts vs $t_opts on $file)"
         : $((pass++))
     else
         echo "!! FAIL !! ($r_opts vs $t_opts on $file)"
-        [ "$qflag" = "yes" ] || diff $tmp.1 $tmp.2
+        if [ "$vflag" = "yes" ]
+        then
+            ${DIFF} $tmp.1 $tmp.2
+            ${DIFF} $tmp.3 $tmp.4
+        fi
         : $((fail++))
     fi
     rm -f $tmp.?

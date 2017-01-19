@@ -1,0 +1,110 @@
+# @(#)$Id: makefile,v 1.4 2016/06/13 04:06:50 jleffler Exp $
+#
+# Makefile for SCC test output directory
+
+RM_F  = rm -f
+
+FILES = \
+	scc-bogus.binary-c++11.1 \
+	scc-bogus.binary-c++11.2 \
+	scc-bogus.binary-c++14.1 \
+	scc-bogus.binary-c++14.2 \
+	scc-bogus.binary-c++17.1 \
+	scc-bogus.binary-c++17.2 \
+	scc-bogus.binary-c.1 \
+	scc-bogus.binary-c.2 \
+	scc-bogus.ucns-c++11.1 \
+	scc-bogus.ucns-c++11.2 \
+	scc-bogus.ucns-c++14.1 \
+	scc-bogus.ucns-c++14.2 \
+	scc-bogus.ucns-c++17.1 \
+	scc-bogus.ucns-c++17.2 \
+	scc-bogus.ucns-c++98.1 \
+	scc-bogus.ucns-c++98.2 \
+	scc-bogus.ucns-c11.1 \
+	scc-bogus.ucns-c11.2 \
+	scc-bogus.ucns-c90.1 \
+	scc-bogus.ucns-c90.2 \
+	scc-bogus.ucns-c99.1 \
+	scc-bogus.ucns-c99.2 \
+	scc-test.binary-c++11.1 \
+	scc-test.binary-c++11.2 \
+	scc-test.binary-c++14.1 \
+	scc-test.binary-c++14.2 \
+	scc-test.binary-c++17.1 \
+	scc-test.binary-c++17.2 \
+	scc-test.binary-c.1 \
+	scc-test.binary-c.2 \
+	scc-test.example2-c++98-c-n.1 \
+	scc-test.example2-c++98-c-n.2 \
+	scc-test.example2-c++98-c.1 \
+	scc-test.example2-c++98-c.2 \
+	scc-test.example2-c++98-n.1 \
+	scc-test.example2-c++98-n.2 \
+	scc-test.example2-c++98.1 \
+	scc-test.example2-c++98.2 \
+	scc-test.example2-c90-c-n.1 \
+	scc-test.example2-c90-c-n.2 \
+	scc-test.example2-c90-c.1 \
+	scc-test.example2-c90-c.2 \
+	scc-test.example2-c90-n.1 \
+	scc-test.example2-c90-n.2 \
+	scc-test.example2-c90.1 \
+	scc-test.example2-c90.2 \
+	scc-test.example2-c99-c-n.1 \
+	scc-test.example2-c99-c-n.2 \
+	scc-test.example2-c99-c.1 \
+	scc-test.example2-c99-c.2 \
+	scc-test.example2-c99-n.1 \
+	scc-test.example2-c99-n.2 \
+	scc-test.example2-c99.1 \
+	scc-test.example2-c99.2 \
+	scc-test.example3-c++11.1 \
+	scc-test.example3-c++11.2 \
+	scc-test.example3-c++14.1 \
+	scc-test.example3-c++14.2 \
+	scc-test.example3-c++17.1 \
+	scc-test.example3-c++17.2 \
+	scc-test.example3-c++98.1 \
+	scc-test.example3-c++98.2 \
+	scc-test.example3-c11.1 \
+	scc-test.example3-c11.2 \
+	scc-test.example3-c90.1 \
+	scc-test.example3-c90.2 \
+	scc-test.example3-c99.1 \
+	scc-test.example3-c99.2 \
+	scc-test.numpunct-c++11.1 \
+	scc-test.numpunct-c++11.2 \
+	scc-test.numpunct-c++14.1 \
+	scc-test.numpunct-c++14.2 \
+	scc-test.numpunct-c++17.1 \
+	scc-test.numpunct-c++17.2 \
+	scc-test.numpunct-c.1 \
+	scc-test.numpunct-c.2 \
+	scc-test.rawstring-c++11.1 \
+	scc-test.rawstring-c++11.2 \
+	scc-test.rawstring-c++14.1 \
+	scc-test.rawstring-c++14.2 \
+	scc-test.rawstring-c++17.1 \
+	scc-test.rawstring-c++17.2 \
+	scc-test.rawstring-c11.1 \
+	scc-test.rawstring-c11.2 \
+	scc-test.ucns-c++11.1 \
+	scc-test.ucns-c++11.2 \
+	scc-test.ucns-c++14.1 \
+	scc-test.ucns-c++14.2 \
+	scc-test.ucns-c++17.1 \
+	scc-test.ucns-c++17.2 \
+	scc-test.ucns-c++98.1 \
+	scc-test.ucns-c++98.2 \
+	scc-test.ucns-c11.1 \
+	scc-test.ucns-c11.2 \
+	scc-test.ucns-c90.1 \
+	scc-test.ucns-c90.2 \
+	scc-test.ucns-c99.1 \
+	scc-test.ucns-c99.2 \
+
+all:	${FILES}
+
+clean:
+	${RM_F} ${FILES}

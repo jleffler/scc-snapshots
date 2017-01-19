@@ -1,17 +1,21 @@
-.\" @(#)$Id: scc.1,v 1.3 2012/02/19 04:03:07 jleffler Exp $
+.\" @(#)$Id: scc.1,v 1.4 2016/05/23 03:46:16 jleffler Exp $
 .\" @(#)Manual page: SCC - Strip C Comments
-.ds fC "Version: $Revision: 1.3 $ ($Date: 2012/02/19 04:03:07 $)
+.ds fC "Version: $Revision: 1.4 $ ($Date: 2016/05/23 03:46:16 $)
 .TH SCC 1S "JLSS UNIX Tools"
 .SH NAME
 scc \(em Strip C comments from source code
 .SH SYNOPSIS
-\fBscc\fP [-chnwCV][-s rep][-q rep] [file ...]
+\fBscc\fP [-cfhnwV][-S std][-s rep][-q rep] [file ...]
 .SH DESCRIPTION
-The \fBscc\fP program strips C comments from source code.
-By default, it eliminates both classic C comments between `\*c/*\*d' and
-`\*c*/\*d' and C++ and C99 comments between `\*c//\*d' and end of line.
-By specifying `\*c-C\*d', you can arrange to eliminate only classic C
-comments.
+The \fBscc\fP program strips comments from C and C++ source code.
+By default, it assumes the code is C11 and therefore eliminates both
+classic C comments between `\*c/*\*d' and `\*c*/\*d' and C++ and C99
+comments between `\*c//\*d' and end of line.
+.P
+You can select the language and standard with `\*c-S\*d' followed by a
+case-insensitive code for the standard: one of `C', `C++`, `C89', `C90',
+`C99', `C11', `C++98', `C++03', `C++11', `C++14'.
+.P
 By specifying `\*c-w\*d', you can obtain warnings about nested C
 comments - that is, about `\*c/*\*d' appearing inside another classic C
 comment.
@@ -28,8 +32,10 @@ literals with the single character specified by `\*crep\*d'.
 .P
 The `\*c-V\*d' option prints the version information and exits.
 The `\*c-h\*d' option prints a help message and exits.
+The `\*c-f\*d' option prints the flags (or features) associated with the
+language version selected.
 .P
-The \fBscc\*d' program is aware of the intricacies of backslash-newline,
+The \fBscc\fP program is aware of the intricacies of backslash-newline,
 and single-quoted characters, and double-quoted character strings.
 Consequently, it correctly handles such bizarre comments as this:
 .P
@@ -41,13 +47,34 @@ Consequently, it correctly handles such bizarre comments as this:
 .br
 /\*d
 .br
+.P
+By design decision, \fBscc\fP ignores both digraphs and trigraphs.
+Digraphs do not affect the material the SCC deals with.
+Trigraphs (especially `\*c??/\*d', the trigraph for a backslash,
+`\*c\e\*d') could affect the code, but there are programs \fBdigraphs\fP
+and \fBtrigraphs\fP that manipulate code with digraphs and trigraphs.
+These should be used before working on the source with SCC.
+Note that if trigraph sequences are embedded in raw strings, the
+\fBtrigraphs\fP program will manipulate them where a C++ compiler would
+not treat them as trigraphs.
+Succinctly: don't do it!
+.P
+SCC handles C++11 raw strings and various dialects of Unicode strings.
+It handles C++14 numeric punctuation (which requires full analysis of numbers).
 .SH BUGS
 Earlier versions of \fBscc\fP used `\*c-C\*d' to enable the removal of
 C99 or C++ comments.
 The behaviour was reversed in version 5.3.
+The option was removed altogether in version 6.0 because the `\*c-S\*d'
+handles this more flexibly.
+.P
+There are some ghastly possible behaviours related to `\*c/*\*d' or
+`\*c//\*d' sequences in association with `\*c#include\*d' directives.
+Once again, these are more theoretical than practical, and SCC currently
+does not detect or handle them.
 .SH AUTHOR
 Jonathan Leffler
 .br
 JLSS
 .br
-18th February 2012
+22nd May 2016

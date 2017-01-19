@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on core functionality
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1997,2003,2007,2013-15
-@(#)Product:        SCC Version 6.16 (2016-01-19)
+@(#)Product:        SCC Version 6.50 (2016-06-12)
 */
 
 /*TABSTOP=4*/

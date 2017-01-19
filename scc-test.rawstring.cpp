@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: scc-test.rawstring.cpp,v $
-@(#)Version:        $Revision: 1.2 $
-@(#)Last changed:   $Date: 2015/07/06 21:48:25 $
+@(#)Version:        $Revision: 1.4 $
+@(#)Last changed:   $Date: 2016/06/11 22:13:56 $
 @(#)Purpose:        Test SCC on C++11 raw strings
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014-15
-@(#)Product:        SCC Version 6.16 (2016-01-19)
+@(#)Product:        SCC Version 6.50 (2016-06-12)
 */
 
 /*TABSTOP=4*/
@@ -13,7 +13,7 @@
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_rawstring_cpp[];
-const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 1.2 2015/07/06 21:48:25 jleffler Exp $";
+const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 1.4 2016/06/11 22:13:56 jleffler Exp $";
 #endif /* lint */
 
 /* NB: This requires C++11 or C++14 support to compile; C++98 is not adequate */
@@ -33,20 +33,20 @@ const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 1.2 
 
 char xyz[] = R"aa(/*
 not a comment
-*/)aa";
-char abc[] = R"/*(not a comment)/*";
+*/)aa";  /* But this is */
+char abc[] = R"/*(not a comment)/*";  /* But this is */
 char def[] = R"(a minimal sort of
-raw string)";
-char ghi[] = u8R"utf8(characters—and more€‹›)utf8";
+raw string)";  // But this is
+char ghi[] = u8R"utf8(characters—and more€‹›)utf8";     // And so is this
 
-wchar_t jkl[] = LR"wide(characters appear here)wide";
+wchar_t jkl[] = LR"wide(characters appear here)wide";   // And this one
 
-char16_t mno[] = uR"RuR("Rossum's Universal Robots")RuR";
+char16_t mno[] = uR"RuR("Rossum's Universal Robots")RuR";   // And another
 
 char32_t pqr[] = UR"RuR(close) are allowed)Ru)
 inside
 a
-raw)string)RuR";
+raw)string)RuR";  // This is a comment
 
 char stu[] = u8R"??(xxx)??";  // Not trigraphs!
 
@@ -153,7 +153,7 @@ char tuv[] = u8"\n"
 /* Samples from the standard - exploiting string concatenation */
 const char *p = R"(a\
 b
-c)";
+c)";    /* Trailing comment */
 const char *q = "a\\\nb\nc";
 
 /* Lots of string concatenation here */
@@ -162,12 +162,21 @@ const char *mix =
 R"a(
 )\
 a"
-)a"
-" is equivalent to " "\n)\\\na\"\n"
-R"(??)"
-"\?\?"
+)a" /* comment separator */
+" is equivalent to " "\n)\\\na\"\n" /* comment separator */
+R"(??)" /* comment separator */
+"\?\?" /* comment separator */
 R"#(
 )??="
-)#"
-"\n)\?\?=\"\n";
+)#" /* comment separator */
+"\n)\?\?=\"\n"; /* comment separator */
+
+/* Testing almost matches */
+
+const char *a01 = R"aa( )a )bs )aaa )aa )aa"; /* comment terminator */
+const char *a02 = R"abcdefghijklmnop( hoops to jump through )abcdefghijklmnop";
+
+const char *a05 = R"abcdefghijklmnop( hoops
+to jump through )abcdefghijklmnop)abc))abcdefghijklmnopq
+)abcdefghijklmnop";   /* And a final comment */
 

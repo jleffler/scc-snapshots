@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-02.sh,v 1.1 2014/07/10 05:47:38 jleffler Exp $
+# @(#)$Id: scc.test-02.sh,v 1.2 2016/05/31 00:40:45 jleffler Exp $
 #
 # Test driver for SCC: -f option and -S option
 
@@ -39,6 +39,7 @@ C++98 comments universal.character.names
 C++03 comments universal.character.names
 C++11 comments universal.character.names raw.strings unicode.strings
 C++14 comments universal.character.names raw.strings unicode.strings binary numeric.punctuation
+C++17 comments universal.character.names raw.strings unicode.strings binary numeric.punctuation hexadecimal.float
 
 EOF
 

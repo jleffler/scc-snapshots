@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+ 
+
+#include <wchar.h>   
+//#include <uchar.h>
+#include "uchar.h"   
+
+int main(void)
+{
+    wchar_t  wc   = L'x';
+    char16_t uc   = u'x';
+    char32_t Uc   = U'x';
+    wchar_t  ws[] = L"x";
+    char16_t us[] = u"x";
+    char32_t Us[] = U"x";
+    return wc + uc + Uc + ws[0] + us[0] + Us[0];
+s
