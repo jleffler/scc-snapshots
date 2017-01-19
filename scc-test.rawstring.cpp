@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on C++11 raw strings
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014-15
-@(#)Product:        SCC Version 6.50 (2016-06-12)
+@(#)Product:        SCC Version 6.60 (2016-06-12)
 */
 
 /*TABSTOP=4*/

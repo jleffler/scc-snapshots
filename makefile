@@ -1,37 +1,24 @@
-#	@(#)$Id: makefile,v 1.6 2016/06/13 04:01:20 jleffler Exp $
+# @(#)$Id: makefile,v 1.6 2016/06/11 22:26:40 jleffler Exp $
 #
-#	Makefile for SCC - Strip C Comments
+# Makefile for SCC (Strip C/C++ Comments)
 
-.SECONDEXPANSION:		# Needed by GNU Make
+PROGRAM = scc
+SOURCE  = errhelp.c filter.c filterio.c stderr.c scc.c
+OBJECT  = errhelp.o filter.o filterio.o stderr.o scc.o
+DEBRIS  = a.out core *~
+OFLAGS  = -g
+WFLAGS  = # -Wall -Wmissing-prototypes -Wstrict-prototypes -std=c11 -pedantic
+UFLAGS  = # Set on command line only
+IFLAGS  = # -I directory options
+DFLAGS  = # -D define options
+CFLAGS  = ${OFLAGS} ${UFLAGS} ${WFLAGS} ${IFLAGS} ${DFLAGS}
 
-GCC_STD   = -std=c11 -pedantic
-GCC_FLAGS = -Werror -Wall -Wshadow -Wpointer-arith -Wcast-qual \
-			-Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition
+BASH = bash
 
-BITS      = 64
-CC        = gcc -m${BITS}
-JLLIBDIR  = ${HOME}/lib/${BITS}
-JLLIBBASE = jl
-JLLIBNAME = lib${LIBJLBASE}.a
-UFLAGS    = # Set on command line only
-OFLAGS    = -O -Wall -Wshadow -DDEBUG -ansi
-OFLAGS    = -g -O
-WFLAGS    = ${GCC_STD} ${GCC_FLAGS}
-CPPFLAGS  = -I${HOME}/inc
-CFLAGS    = ${CPPFLAGS} ${OFLAGS} ${WFLAGS} ${UFLAGS}
-STRIP     = #-s
-JLLIBFLAG = -L${JLLIBDIR}
-JLLIB     = -l${JLLIBBASE}
-LDFLAGS   = ${JLLIBFLAG} ${STRIP}
-LDLIBS    = ${JLLIB}
-PROGRAM   = scc
-OUTPUT    = Output
-BASH      = bash
+.PHONEY: all test dev-test clean realclean depend
 
-RM_F      = rm -f
-RM_FR     = rm -fr
-DEBRIS    = a.out core *~ *.o *.a
-DEBRIS_D  = *.dSYM
+TEST_TOOLS = \
+	rcskwreduce
 
 TEST_SCRIPTS = \
 	scc.test-01.sh \
@@ -42,39 +29,37 @@ TEST_SCRIPTS = \
 	scc.test-06.sh \
 	scc.test-07.sh \
 
-TEST_SOURCE = \
-	scc-bogus.binary.cpp \
-	scc-bogus.rawstring.cpp \
-	scc-bogus.ucns.c \
-	scc-test.binary.cpp \
-	scc-test.comment.cpp \
-	scc-test.example1.c \
-	scc-test.example2.c \
-	scc-test.example3.c \
-	scc-test.hexfloat.cpp \
-	scc-test.numpunct.cpp \
-	scc-test.rawstring.cpp \
-	scc-test.ucns.c \
+all: ${PROGRAM} ${TESTTOOLS}
 
-all:	${PROGRAM}
+${PROGRAM}: ${OBJECT}
+	${CC} -o $@ ${CFLAGS} ${OBJECT} ${LDFLAGS} ${LDLIBES}
 
-test:	${PROGRAM} test-output dev-test
+test:	${PROGRAM} dev-test ${TESTTOOLS}
 
 dev-test: ${TEST_SCRIPTS}
 	for test in ${TEST_SCRIPTS}; \
 	do echo $$test; ${BASH} $$test; \
 	done
 
-test-output:
-	+cd ${OUTPUT}; ${MAKE}
-
 clean:
-	${RM_F} ${TEST_SCRIPTS} ${TEST_SOURCE}
-	${RM_F} ${DEBRIS}
-	${RM_FR} ${DEBRIS_D}
+	rm -f ${OBJECT} ${DEBRIS}
 
 realclean: clean
-	${RM_F} ${PROGRAM:=.c}
+	rm -f ${PROGRAM} ${SCRIPT}
 
-${PROGRAM}: $$@.c
-	${CC} ${CFLAGS} -o $@ $@.c ${LDFLAGS} ${LDLIBS}
+depend: ${SOURCE}
+	mkdep --makefile=scc.mk ${SOURCE}
+
+# DO NOT DELETE THIS LINE or the blank line after it -- make depend uses them.
+
+errhelp.o: errhelp.c
+errhelp.o: stderr.h
+filter.o: filter.c
+filter.o: filter.h
+filter.o: stderr.h
+scc.o: filter.h
+scc.o: posixver.h
+scc.o: scc.c
+scc.o: stderr.h
+stderr.o: stderr.c
+stderr.o: stderr.h

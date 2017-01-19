@@ -1,7 +1,7 @@
 /*
 @(#)File:           $RCSfile: scc.c,v $
-@(#)Version:        $Revision: 6.30 $
-@(#)Last changed:   $Date: 2016/06/11 22:36:39 $
+@(#)Version:        $Revision: 6.31 $
+@(#)Last changed:   $Date: 2016/06/13 04:34:04 $
 @(#)Purpose:        Strip C comments
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1991,1993,1997-98,2003,2005,2007-08,2011-12,2014-16
@@ -151,7 +151,7 @@ static Comment non_comment(int c, FILE *fp, const char *fn);
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_c[];
-const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 6.30 2016/06/11 22:36:39 jleffler Exp $";
+const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 6.31 2016/06/13 04:34:04 jleffler Exp $";
 #endif /* lint */
 
 static int getch(FILE *fp)
@@ -1187,7 +1187,7 @@ int main(int argc, char **argv)
             std_code = parse_std_arg(optarg);
             break;
         case 'V':
-            err_version("SCC", "$Revision: 6.30 $ ($Date: 2016/06/11 22:36:39 $)");
+            err_version("SCC", &"@(#)6.60 (2016-06-12)"[4]);
             break;
         default:
             err_usage(usestr);
