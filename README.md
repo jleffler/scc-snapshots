@@ -8,8 +8,8 @@ There are currently 6 releases:
 * 4.03 (2008-06-07)
 * 4.04 (2008-11-27)
 * 5.05 (2012-01-23)
-* 6.16 (2016-01-19)
-* 6.50 (2016-06-12)
+* 6.16 (2016-01-19) — pre-release
+* 6.50 (2016-06-12) — pre-release
 * 6.60 (2016-06-12)
 
 These are tagged release/x.yz.  The code is all on branch master.
