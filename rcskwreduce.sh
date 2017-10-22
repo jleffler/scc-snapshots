@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# @(#)$Id|
+# @(#)$Id: rcskwreduce.sh,v 1.2 2017/10/11 21:07:52 jleffler Exp $
 #
 # Normalize (reduce) expanded RCS keywords to minimal form.
 

@@ -1,10 +1,10 @@
 /*
 @(#)File:           $RCSfile: scc.c,v $
-@(#)Version:        $Revision: 6.31 $
-@(#)Last changed:   $Date: 2016/06/13 04:34:04 $
+@(#)Version:        $Revision: 6.35 $
+@(#)Last changed:   $Date: 2017/10/18 06:39:47 $
 @(#)Purpose:        Strip C comments
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1991,1993,1997-98,2003,2005,2007-08,2011-12,2014-16
+@(#)Copyright:      (C) JLSS 1991-2017
 */
 
 /*TABSTOP=4*/
@@ -72,7 +72,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -104,6 +103,18 @@ static const char std_name[][6] =
 };
 enum { NUM_STDNAMES = sizeof(std_name) / sizeof(std_name[0]) };
 
+enum Feature { F_HEXFLOAT, F_RAWSTRING, F_DOUBLESLASH, F_UNICODE, F_BINARY, F_NUMPUNCT, F_UNIVERSAL };
+static const char *feature_name[] =
+{
+    [F_HEXFLOAT]    = "Hexadecimal floating point constant",
+    [F_RAWSTRING]   = "Raw string",
+    [F_DOUBLESLASH] = "Double slash comment",
+    [F_UNICODE]     = "Unicode character or string",
+    [F_BINARY]      = "Binary literal",
+    [F_NUMPUNCT]    = "Numeric punctuation",
+    [F_UNIVERSAL]   = "Universal character name",
+};
+
 static const char * const dq_reg_prefix[] = { "L", "u", "U", "u8", };
 static const char * const dq_raw_prefix[] = { "R", "LR", "uR", "UR", "u8R" };
 enum { NUM_DQ_REG_PREFIX = sizeof(dq_reg_prefix) / sizeof(dq_reg_prefix[0]) };
@@ -111,11 +122,13 @@ enum { NUM_DQ_RAW_PREFIX = sizeof(dq_raw_prefix) / sizeof(dq_raw_prefix[0]) };
 
 static int std_code = C11;  /* Selected standard */
 
-static int cflag = 0;   /* Print comments and not code */
-static int nflag = 0;   /* Keep newlines in comments */
+static bool cflag = false;   /* Print comments and not code */
+static bool eflag = false;   /* Print empty comment instead of blank */
+static bool nflag = false;   /* Keep newlines in comments */
+static bool wflag = false;   /* Warn about nested C-style comments */
+
 static int qchar = 0;   /* Replacement character for quotes */
 static int schar = 0;   /* Replacement character for strings */
-static int wflag = 0;   /* Warn about nested C-style comments */
 
 /* Features recognized */
 static bool f_DoubleSlash = false;  /* // comments */
@@ -124,16 +137,18 @@ static bool f_Unicode = false;      /* Unicode strings (u\"A\", U\"A\", u8\"A\")
 static bool f_Binary = false;       /* Binary constants 0b0101 */
 static bool f_HexFloat = false;     /* Hexadecimal floats 0x2.34P-12 */
 static bool f_NumPunct = false;     /* Numeric punctuation 0x1234'5678 */
-static bool f_UniversalCharNames = false;  /* Universal character names \uXXXX and \Uxxxxxxxx */
+static bool f_Universal = false;    /* Universal character names \uXXXX and \Uxxxxxxxx */
 
 static int nline = 0;   /* Line counter */
 static int l_nest = 0;  /* Last line with a nested comment warning */
 static int l_cend = 0;  /* Last line with a comment end warning */
+static bool l_comment = false;  /* Line contained a comment - print newline in -c mode */
 
-static const char optstr[] = "cfhnq:s:wS:V";
-static const char usestr[] = "[-cfhnwV][-S std][-s rep][-q rep] [file ...]";
+static const char optstr[] = "cefhnq:s:wS:V";
+static const char usestr[] = "[-cefhnwV][-S std][-s rep][-q rep] [file ...]";
 static const char hlpstr[] =
     "  -c      Print comments and not the code\n"
+    "  -e      Print empty comment /* */ or //\n"
     "  -f      Print flags in effect (debugging mainly)\n"
     "  -h      Print this help and exit\n"
     "  -n      Keep newlines in comments\n"
@@ -151,7 +166,7 @@ static Comment non_comment(int c, FILE *fp, const char *fn);
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_c[];
-const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 6.31 2016/06/13 04:34:04 jleffler Exp $";
+const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 6.35 2017/10/18 06:39:47 jleffler Exp $";
 #endif /* lint */
 
 static int getch(FILE *fp)
@@ -181,8 +196,10 @@ static int peek(FILE *fp)
 /* Put source code character */
 static void s_putch(char c)
 {
-    if (!cflag || (nflag && c == '\n'))
+    if (!cflag || ((nflag || l_comment) && c == '\n'))
         putchar(c);
+    if (c == '\n')
+        l_comment = false;
 }
 
 /* Put comment (non-code) character */
@@ -220,47 +237,11 @@ static void warningv(const char *fmt, const char *file, int line, ...)
     warning(buffer, file, line);
 }
 
-/* The warn_XxxYyy() functions are crying out for refactoring */
-static void warn_HexFloat(const char *fn)
+static void warn_feature(enum Feature feature, const char *fn)
 {
     assert(fn != 0);
-    warning2("Hexadecimal floating point constant used but not supported in", std_name[std_code], fn, nline);
-}
-
-static void warn_RawString(const char *fn)
-{
-    assert(fn != 0);
-    warning2("Raw string used but not supported in", std_name[std_code], fn, nline);
-}
-
-static void warn_DoubleSlash(const char *fn)
-{
-    assert(fn != 0);
-    warning2("Double slash comment used but not supported in", std_name[std_code], fn, nline);
-}
-
-static void warn_Unicode(const char *fn)
-{
-    assert(fn != 0);
-    warning2("Unicode feature used but not supported in", std_name[std_code], fn, nline);
-}
-
-static void warn_Binary(const char *fn)
-{
-    assert(fn != 0);
-    warning2("Binary literal feature used but not supported in", std_name[std_code], fn, nline);
-}
-
-static inline void warn_NumPunct(const char *fn)
-{
-    assert(fn != 0);
-    warning2("Numeric punctuation feature used but not supported in", std_name[std_code], fn, nline);
-}
-
-static inline void warn_UniversalCharNames(const char *fn)
-{
-    assert(fn != 0);
-    warning2("Universal character names feature used but not supported in", std_name[std_code], fn, nline);
+    assert(feature >= F_HEXFLOAT && feature <= F_UNIVERSAL);
+    warningv("%s feature used but not supported in %s", fn, nline, feature_name[feature], std_name[std_code]);
 }
 
 static void put_quote_char(char q, char c)
@@ -292,8 +273,8 @@ static void endquote(char q, FILE *fp, const char *fn, const char *msg)
             if ((c = getch(fp)) == EOF)
                 break;
             put_quote_char(q, c);
-            if ((c == 'u' || c == 'U') && !f_UniversalCharNames)
-                warn_UniversalCharNames(fn);
+            if ((c == 'u' || c == 'U') && !f_Universal)
+                warn_feature(F_UNIVERSAL, fn);
             if (c == '\\' && peek(fp) == '\n')
                 s_putch(getch(fp));
         }
@@ -357,12 +338,18 @@ static Comment c_comment(int c, FILE *fp, const char *fn)
         int bsnl = read_bsnl(fp);
         if (peek(fp) == '/')
         {
+            l_comment = true;
             status = NonComment;
             c = getch(fp);
             c_putch('*');
             write_bsnl(bsnl, c_putch);
             c_putch('/');
             s_putch(' ');
+            if (eflag)
+            {
+                s_putch('*');
+                s_putch('/');
+            }
         }
         else
         {
@@ -389,6 +376,8 @@ static Comment cpp_comment(int c, int oc)
     {
         status = NonComment;
         s_putch(c);
+        if (!nflag)
+            c_putch(c);
     }
     else
         c_putch(c);
@@ -409,8 +398,8 @@ static void scan_ucn(int letter, int nbytes, FILE *fp, const char *fn)
     bool ok = true;
     int i;
     char str[8];
-    if (!f_UniversalCharNames)
-        warn_UniversalCharNames(fn);
+    if (!f_Universal)
+        warn_feature(F_UNIVERSAL, fn);
     s_putch('\\');
     int c = getch(fp);
     assert(c == letter);
@@ -464,7 +453,7 @@ static int check_punct(int oc, FILE *fp, const char *fn, int (*digit_check)(int 
     assert(sq == '\'');
     s_putch(sq);
     if (!f_NumPunct)
-        warn_NumPunct(fn);
+        warn_feature(F_NUMPUNCT, fn);
     if (!(*digit_check)(oc))
     {
         warning("Single quote in numeric context not preceded by a valid digit", fn, nline);
@@ -525,7 +514,7 @@ static void parse_hex(FILE *fp, const char *fn)
             if (pc == '.' && !f_HexFloat)
             {
                 if (!warned)
-                    warn_HexFloat(fn);
+                    warn_feature(F_HEXFLOAT, fn);
                 warned = true;
             }
             oc = pc;
@@ -535,7 +524,7 @@ static void parse_hex(FILE *fp, const char *fn)
     if (pc == 'p' || pc == 'P')
     {
         if (!f_HexFloat && !warned)
-            warn_HexFloat(fn);
+            warn_feature(F_HEXFLOAT, fn);
         parse_exponent(fp, fn);
     }
 }
@@ -545,7 +534,7 @@ static void parse_binary(FILE *fp, const char *fn)
     /* Binary constant - integer */
     /* Should be followed by one or more binary digits */
     if (!f_Binary)
-        warn_Binary(fn);
+        warn_feature(F_BINARY, fn);
     s_putch('0');     /* 0 */
     int c = getch(fp);
     assert(c == 'b' || c == 'B');
@@ -871,14 +860,14 @@ static void parse_dq_string(const char *prefix, FILE *fp, const char *fn)
     if (valid_dq_raw_prefix(prefix))
     {
         if (!f_RawString)
-            warn_RawString(fn);
+            warn_feature(F_RAWSTRING, fn);
         s_putstr(prefix);
         parse_raw_string(prefix, fp, fn);
     }
     else
     {
         if (strcmp(prefix, "L") != 0 && !f_Unicode)
-            warn_Unicode(fn);
+            warn_feature(F_UNICODE, fn);
         s_putstr(prefix);
         (void)non_comment('"', fp, fn);
     }
@@ -968,7 +957,7 @@ static Comment non_comment(int c, FILE *fp, const char *fn)
 {
     int pc;
     Comment status = NonComment;
-    if (c == '*' && wflag == 1 && peek(fp) == '/')
+    if (c == '*' && peek(fp) == '/')
     {
         /* NB: does not detect star backslash newline slash as stray end of comment */
         if (l_cend != nline)
@@ -1009,10 +998,15 @@ static Comment non_comment(int c, FILE *fp, const char *fn)
             c_putch('/');
             write_bsnl(bsnl, c_putch);
             c_putch('*');
+            if (eflag)
+            {
+                s_putch('/');
+                s_putch('*');
+            }
         }
         else if (!f_DoubleSlash && pc == '/')
         {
-            warn_DoubleSlash(fn);
+            warn_feature(F_DOUBLESLASH, fn);
             c = getch(fp);
             s_putch(c);
             write_bsnl(bsnl, s_putch);
@@ -1025,6 +1019,11 @@ static Comment non_comment(int c, FILE *fp, const char *fn)
             c_putch(c);
             write_bsnl(bsnl, c_putch);
             c_putch(c);
+            if (eflag)
+            {
+                s_putch('/');
+                s_putch('/');
+            }
         }
         else
         {
@@ -1106,7 +1105,7 @@ static void set_features(int code)
         /*FALLTHROUGH*/
     case C99:
         f_HexFloat = true;
-        f_UniversalCharNames = true;
+        f_Universal = true;
         f_DoubleSlash = true;
         break;
     case CXX17:
@@ -1123,7 +1122,7 @@ static void set_features(int code)
         /*FALLTHROUGH*/
     case CXX98:
     case CXX03:
-        f_UniversalCharNames = true;
+        f_Universal = true;
         f_DoubleSlash = true;
         break;
     default:
@@ -1136,9 +1135,9 @@ static void print_features(int code)
 {
     printf("Standard: %s\n", std_name[code]);
     if (f_DoubleSlash)
-        printf("Feature:  // comments\n");
+        printf("Feature:  Double slash comments // to EOL\n");
     if (f_RawString)
-        printf("Feature:  Raw strings\n");
+        printf("Feature:  Raw strings R\"ZZ(string)ZZ\"\n");
     if (f_Unicode)
         printf("Feature:  Unicode strings (u\"A\", U\"A\", u8\"A\")\n");
     if (f_Binary)
@@ -1147,7 +1146,7 @@ static void print_features(int code)
         printf("Feature:  Hexadecimal floats 0x2.34P-12\n");
     if (f_NumPunct)
         printf("Feature:  Numeric punctuation 0x1234'5678\n");
-    if (f_UniversalCharNames)
+    if (f_Universal)
         printf("Feature:  Universal character names \\uXXXX and \\Uxxxxxxxx\n");
 }
 
@@ -1163,7 +1162,10 @@ int main(int argc, char **argv)
         switch (opt)
         {
         case 'c':
-            cflag = 1;
+            cflag = true;
+            break;
+        case 'e':
+            eflag = true;
             break;
         case 'f':
             fflag = true;
@@ -1172,7 +1174,7 @@ int main(int argc, char **argv)
             err_help(usestr, hlpstr);
             break;
         case 'n':
-            nflag = 1;
+            nflag = true;
             break;
         case 'q':
             qchar = *optarg;
@@ -1181,13 +1183,13 @@ int main(int argc, char **argv)
             schar = *optarg;
             break;
         case 'w':
-            wflag = 1;
+            wflag = true;
             break;
         case 'S':
             std_code = parse_std_arg(optarg);
             break;
         case 'V':
-            err_version("SCC", &"@(#)6.60 (2016-06-12)"[4]);
+            err_version("SCC", &"@(#)6.70 (2017-10-17)"[4]);
             break;
         default:
             err_usage(usestr);

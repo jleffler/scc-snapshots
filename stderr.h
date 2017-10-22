@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: stderr.h,v $
-@(#)Version:        $Revision: 10.10 $
-@(#)Last changed:   $Date: 2015/10/14 23:12:19 $
+@(#)Version:        $Revision: 10.12 $
+@(#)Last changed:   $Date: 2017/04/08 03:43:34 $
 @(#)Purpose:        Header file for standard error functions
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1989-93,1996-99,2003,2005-11,2015
-@(#)Product:        SCC Version 6.60 (2016-06-12)
+@(#)Copyright:      (C) JLSS 1989-2017
+@(#)Product:        SCC Version 6.70 (2017-10-17)
 */
 
 #if !defined(STDERR_H)
@@ -15,7 +15,7 @@
 #if !defined(lint)
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_stderr_h[];
-const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.10 2015/10/14 23:12:19 jleffler Exp $";
+const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.12 2017/04/08 03:43:34 jleffler Exp $";
 #endif /* lint */
 #endif
 
@@ -44,6 +44,14 @@ const char jlss_id_stderr_h[] = "@(#)$Id: stderr.h,v 10.10 2015/10/14 23:12:19 j
 #define NORETURN      /* If only */
 #endif /* __STDC_VERSION__ || __GNUC__ */
 #endif /* NORETURN */
+
+#if !defined(DEPRECATED)
+#if defined(__GNUC__)
+#define DEPRECATED __attribute__((deprecated))
+#else
+#define DEPRECATED /* If only */
+#endif /* __GNUC__ */
+#endif /* DEPRECATED */
 
 #if !defined(PRINTFLIKE)
 #if defined(__GNUC__)
@@ -107,14 +115,14 @@ extern const char *err_rcs_string(const char *s, char *buffer, size_t buflen);
 
 extern NORETURN void err_abort(const char *format, ...) PRINTFLIKE(1,2);
 extern NORETURN void err_error(const char *format, ...) PRINTFLIKE(1,2);
-extern NORETURN void err_error1(const char *s1);
-extern NORETURN void err_error2(const char *s1, const char *s2);
+extern NORETURN void err_error1(const char *s1) DEPRECATED;                 /* err_error() */
+extern NORETURN void err_error2(const char *s1, const char *s2) DEPRECATED; /* err_error() */
 extern NORETURN void err_help(const char *use_str, const char *hlp_str);
 extern NORETURN void err_helplist(const char *use_str, const char * const *help_list);
 extern NORETURN void err_internal(const char *function, const char *format, ...) PRINTFLIKE(2,3);
 extern NORETURN void err_syserr(const char *format, ...) PRINTFLIKE(1,2);
-extern NORETURN void err_syserr1(const char *s1);
-extern NORETURN void err_syserr2(const char *s1, const char *s2);
+extern NORETURN void err_syserr1(const char *s1) DEPRECATED;                    /* err_syserr() */
+extern NORETURN void err_syserr2(const char *s1, const char *s2) DEPRECATED;    /* err_syserr() */
 extern NORETURN void err_syserror(int errnum, const char *format, ...) PRINTFLIKE(2,3);
 extern NORETURN void err_usage(const char *usestr);
 extern NORETURN void err_version(const char *program, const char *verinfo);
@@ -123,16 +131,20 @@ extern void err_logmsg(FILE *fp, int flags, int estat, const char *format, ...) 
 extern void err_print(int flags, int estat, const char *format, va_list args);
 extern void err_printversion(const char *program, const char *verinfo);
 extern void err_remark(const char *format, ...) PRINTFLIKE(1,2);
-extern void err_remark1(const char *s1);
-extern void err_remark2(const char *s1, const char *s2);
+extern void err_remark1(const char *s1) DEPRECATED;                 /* err_remark() */
+extern void err_remark2(const char *s1, const char *s2) DEPRECATED; /* err_remark() */
 extern void err_report(int flags, int estat, const char *format, ...) PRINTFLIKE(3,4);
 extern void err_sysrem(const char *format, ...) PRINTFLIKE(1,2);
-extern void err_sysrem1(const char *s1);
-extern void err_sysrem2(const char *s1, const char *s2);
+extern void err_sysrem1(const char *s1) DEPRECATED;                 /* err_sysrem() */
+extern void err_sysrem2(const char *s1, const char *s2) DEPRECATED; /* err_sysrem() */
 extern void err_sysremark(int errnum, const char *format, ...) PRINTFLIKE(2,3);
 
 extern int  err_getlogopts(void);           /* Get default log options */
 extern int  err_setlogopts(int new_opts);   /* Set default log options */
+
+/* Time format of NULL sets default format - returns previous format */
+extern const char *err_settimeformat(const char *new_fmt);
+extern const char *err_gettimeformat(void);
 
 #if defined(USE_STDERR_FILEDESC)
 extern int  err_use_fd(int fd);             /* Use file descriptor */

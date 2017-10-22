@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: posixver.h,v $
-@(#)Version:        $Revision: 1.3 $
-@(#)Last changed:   $Date: 2015/07/05 21:28:18 $
+@(#)Version:        $Revision: 1.4 $
+@(#)Last changed:   $Date: 2017/06/18 00:15:42 $
 @(#)Purpose:        Request appropriate POSIX and X/Open Support
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 2010,2015
-@(#)Product:        SCC Version 6.60 (2016-06-12)
+@(#)Copyright:      (C) JLSS 2010-2017
+@(#)Product:        SCC Version 6.70 (2017-10-17)
 */
 
 /*TABSTOP=4*/
@@ -15,7 +15,7 @@
 
 /*
 ** Include this file before including system headers.  By default, with
-** C99 support from the compiler, it requests POSIX 2001 support.  With
+** C99 support from the compiler, it requests POSIX 2008 support.  With
 ** C89 support only, it requests POSIX 1997 support.  Override the
 ** default behaviour by setting either _XOPEN_SOURCE or _POSIX_C_SOURCE.
 */

@@ -1,4 +1,4 @@
-# @(#)$Id: makefile,v 1.4 2016/06/13 04:06:50 jleffler Exp $
+# @(#)$Id: makefile,v 1.5 2017/10/18 05:56:33 jleffler Exp $
 #
 # Makefile for SCC test output directory
 
@@ -103,6 +103,12 @@ FILES = \
 	scc-test.ucns-c90.2 \
 	scc-test.ucns-c99.1 \
 	scc-test.ucns-c99.2 \
+	scc.test-08.example2-e.1 \
+	scc.test-08.example2-e.2 \
+	scc.test-08.example2-ec.1 \
+	scc.test-08.example2-ec.2 \
+	scc.test-08.example2-en.1 \
+	scc.test-08.example2-en.2 \
 
 all:	${FILES}
 

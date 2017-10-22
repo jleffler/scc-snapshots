@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-05.sh,v 1.3 2016/06/10 04:27:45 jleffler Exp $
+# @(#)$Id: scc.test-05.sh,v 1.4 2016/06/13 05:45:22 jleffler Exp $
 #
 # Test driver for SCC: Handling of Unicode characters and strings
 
@@ -68,16 +68,18 @@ do
             diff "$tmp.2" "$EXPERR"
             test=1
         fi
-        if [ "$gflag" = no ]
+        if [ "$gflag" = yes ]
         then
-            if [ $test = 0 ]
-            then
-                echo "== PASS == ($standard: $base.c)"
-                : $((pass++))
-            else
-                echo "!! FAIL !! ($standard: $base.c)"
-                : $((fail++))
-            fi
+            echo "== GENERATED == ($standard: $base.c)"
+            echo "                ($EXPOUT $EXPERR)"
+            : $((pass++))
+        elif [ $test = 0 ]
+        then
+            echo "== PASS == ($standard: $base.c)"
+            : $((pass++))
+        else
+            echo "!! FAIL !! ($standard: $base.c)"
+            : $((fail++))
         fi
         rm -f "$tmp".?
     done

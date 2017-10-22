@@ -1,11 +1,11 @@
-.\" @(#)$Id: scc.1,v 1.4 2016/05/23 03:46:16 jleffler Exp $
+.\" @(#)$Id: scc.1,v 1.6 2017/10/18 06:47:32 jleffler Exp $
 .\" @(#)Manual page: SCC - Strip C Comments
-.ds fC "Version: $Revision: 1.4 $ ($Date: 2016/05/23 03:46:16 $)
+.ds fC "Version: $Revision: 1.6 $ ($Date: 2017/10/18 06:47:32 $)
 .TH SCC 1S "JLSS UNIX Tools"
 .SH NAME
 scc \(em Strip C comments from source code
 .SH SYNOPSIS
-\fBscc\fP [-cfhnwV][-S std][-s rep][-q rep] [file ...]
+\fBscc\fP [-cefhnwV][-S std][-s rep][-q rep] [file ...]
 .SH DESCRIPTION
 The \fBscc\fP program strips comments from C and C++ source code.
 By default, it assumes the code is C11 and therefore eliminates both
@@ -23,6 +23,9 @@ The `\*c-c\*d' option prints comments and not the code.
 The `\*c-n\*d' option keeps newlines in comments, so the input and
 output line counts should be the same, even though comments were
 stripped.
+The `\*c-e\*d' option prints an empty comment (omitting the text of
+the comment) rather than deleting it altogether, so it does not apply
+when the `\*c-c\*d' option is used.
 .P
 The `\*c-s rep\*d' option replaces the body of string literals with the
 single character specified by `\*crep\*d', which can simplify some forms
@@ -72,9 +75,12 @@ There are some ghastly possible behaviours related to `\*c/*\*d' or
 `\*c//\*d' sequences in association with `\*c#include\*d' directives.
 Once again, these are more theoretical than practical, and SCC currently
 does not detect or handle them.
+.SH VERSION
+Documentation for
+SCC Version 6.70 (2017-10-17) Version 6.70 (2017-10-17)
 .SH AUTHOR
 Jonathan Leffler
 .br
 JLSS
 .br
-22nd May 2016
+12th June 2016

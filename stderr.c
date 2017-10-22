@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: stderr.c,v $
-@(#)Version:        $Revision: 10.14 $
-@(#)Last changed:   $Date: 2015/06/02 03:04:32 $
+@(#)Version:        $Revision: 10.19 $
+@(#)Last changed:   $Date: 2017/07/10 04:54:26 $
 @(#)Purpose:        Error reporting routines
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1988-91,1996-99,2001,2003,2005-11,2013,2015
-@(#)Product:        SCC Version 6.60 (2016-06-12)
+@(#)Copyright:      (C) JLSS 1988-2017
+@(#)Product:        SCC Version 6.70 (2017-10-17)
 */
 
 /*TABSTOP=4*/
@@ -15,6 +15,12 @@
 ** USE_STDERR_SYSLOG   - include syslog functionality
 ** USE_STDERR_FILEDESC - include file descriptor functionality
 ** JLSS_STDERR         - force support for syslog and file descriptors
+**
+** HAVE_UNISTD_H
+** HAVE_CLOCK_GETTIME
+** HAVE_GETTIMEOFDAY
+** HAVE_SYSLOG_H
+** HAVE_SYSLOG
 */
 
 #include "posixver.h"
@@ -33,13 +39,17 @@
 extern int getpid(void);
 #endif /* HAVE_UNISTD_H */
 
-enum { MAX_MSGLEN = 2048 };
+#ifndef ERR_MAXMSGLEN
+#define ERR_MAXMSGLEN 2048
+#endif
+enum { MAX_MSGLEN = ERR_MAXMSGLEN };
 
 /* Find sub-second timing mechanism */
 #if defined(HAVE_CLOCK_GETTIME)
 /* Uses <time.h> */
 #elif defined(HAVE_GETTIMEOFDAY)
-/* Mac OS X 10.10.3 does not have clock_gettime() yet */
+/* Mac OS X up to version 10.11 does not have clock_gettime() */
+/* macOS Sierra 10.12 and up does have clock_gettime() */
 #include <sys/time.h>
 #else
 /* No sub-second timing */
@@ -109,7 +119,7 @@ static NORETURN void err_terminate(int flags, int estat);
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_stderr_c[];
-const char jlss_id_stderr_c[] = "@(#)$Id: stderr.c,v 10.14 2015/06/02 03:04:32 jleffler Exp $";
+const char jlss_id_stderr_c[] = "@(#)$Id: stderr.c,v 10.19 2017/07/10 04:54:26 jleffler Exp $";
 #endif /* lint */
 
 /*
@@ -127,6 +137,23 @@ int err_setlogopts(int new_opts)
 int err_getlogopts(void)
 {
     return(err_flags);
+}
+
+/* Set time format - NULL implies default format */
+const char *err_settimeformat(const char *new_fmt)
+{
+    const char *old_fmt = tm_format;
+    if (new_fmt == NULL)
+        tm_format = def_format;
+    else
+        tm_format = new_fmt;
+    return old_fmt;
+}
+
+/* Set time format - NULL implies default format */
+const char *err_gettimeformat(void)
+{
+    return tm_format;
 }
 
 /* Change the definition of 'stderr', reporting on the old one too */
@@ -199,7 +226,7 @@ const char *(err_getarg0)(void)
 void (err_setarg0)(const char *argv0)
 {
     /* Ignore three pathological program names -- NULL, "/" and "" */
-    if (argv0 != 0 && *argv0 != '\0' && (*argv0 != '/' || *(argv0 + 1) != '\0'))
+    if (argv0 != 0 && *argv0 != '\0' && (argv0[0] != '/' || argv0[1] != '\0'))
     {
         const char *cp;
         size_t nbytes = sizeof(arg0) - 1;
@@ -230,7 +257,11 @@ void (err_setarg0)(const char *argv0)
             if (nbytes > sizeof(arg0) - 1)
                 nbytes = sizeof(arg0) - 1;
         }
-        strncpy(arg0, cp, nbytes);
+        /*
+        ** Use memmove() to allow for usage: daemonize(err_getarg(), 0);
+        ** where daemonize() calls err_setarg0() with its first argument.
+        */
+        memmove(arg0, cp, nbytes);
         arg0[nbytes] = '\0';
     }
 }
@@ -243,7 +274,7 @@ const char *(err_rcs_string)(const char *s2, char *buffer, size_t buflen)
 
     /*
     ** Bother RCS!  We've probably been given something like:
-    ** "$Revision: 10.14 $ ($Date: 2015/06/02 03:04:32 $)"
+    ** "$Revision: 10.19 $ ($Date: 2017/07/10 04:54:26 $)"
     ** We only want to emit "7.5 (2001/08/11 06:25:48)".
     ** Skip the components between '$' and ': ', copy up to ' $',
     ** repeating as necessary.  And we have to test for overflow!
@@ -333,50 +364,26 @@ static char *err_time(int flags, char *buffer, size_t buflen)
     if (flags & (ERR_NANO | ERR_MICRO | ERR_MILLI))
     {
         char subsec[12];
-        size_t ss_len;
+        int ss_len;
         if (flags & ERR_NANO)
             ss_len = snprintf(subsec, sizeof(subsec), ".%.9ld", clk.tv_nsec);
         else if (flags & ERR_MICRO)
             ss_len = snprintf(subsec, sizeof(subsec), ".%.6ld", clk.tv_nsec / 1000);
         else /* (flags & ERR_MILLI) */
             ss_len = snprintf(subsec, sizeof(subsec), ".%.3ld", clk.tv_nsec / (1000 * 1000));
-        if (ss_len + nb + 1 < buflen)
+        if (ss_len > 0 && (size_t)ss_len + nb + 1 < buflen)
             strcpy(buffer + nb, subsec);
     }
     return(buffer);
 }
 
-/* err_stdio - report error via stdio */
-static void (err_stdio)(FILE *fp, int flags, int errnum, const char *format, va_list args)
-{
-    if ((flags & ERR_NOARG0) == 0)
-        fprintf(fp, "%s: ", arg0);
-    if (flags & ERR_LOGTIME)
-    {
-        char timbuf[48];
-        fprintf(fp, "%s - ", err_time(flags, timbuf, sizeof(timbuf)));
-    }
-    if (flags & ERR_PID)
-        fprintf(fp, "pid=%d: ", (int)getpid());
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-    vfprintf(fp, format, args);
-#pragma GCC diagnostic pop
-    if (flags & ERR_ERRNO)
-        fprintf(fp, "error (%d) %s\n", errnum, strerror(errnum));
-}
-
-#if defined(USE_STDERR_FILEDESC) || defined(USE_STDERR_SYSLOG)
 static char *fmt_string(char *curr, const char *end, const char *format, va_list args)
 {
     char *new_end = curr;
     if (curr < end - 1)
     {
         size_t size = (size_t)(end - curr);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
         int more = vsnprintf(curr, size, format, args);
-#pragma GCC diagnostic pop
         if (more >= 0)
             new_end += ((size_t)more >= size) ? size : (size_t)more;
     }
@@ -392,43 +399,11 @@ static char *fmt_strdots(char *curr, const char *end, const char *format, ...)
     va_end(args);
     return new_end;
 }
-#endif /* USE_STDERR_FILEDESC || USE_STDERR_SYSLOG */
 
-#if defined(USE_STDERR_SYSLOG)
-/* err_syslog() - report error via syslog
-**
-** syslog() automatically adds PID and program name (configured in openlog()) and time stamp.
-*/
-static void (err_syslog)(int flags, int errnum, const char *format, va_list args)
+static size_t err_fmtmsg(char *buffer, size_t buflen, int flags, int errnum, const char *format, va_list args)
 {
-    char buffer[MAX_MSGLEN];
     char *curpos = buffer;
-    char *bufend = buffer + sizeof(buffer);
-    int priority;
-
-    curpos = fmt_string(curpos, bufend, format, args);
-    if (flags & ERR_ERRNO)
-        curpos = fmt_strdots(curpos, bufend,
-                            "error (%d) %s\n", errnum, strerror(errnum));
-
-    if (flags & ERR_ABORT)
-        priority = LOG_CRIT;
-    else if (flags & ERR_EXIT)
-        priority = LOG_ERR;
-    else
-        priority = LOG_WARNING;
-    syslog(priority, "%s", buffer);
-}
-#endif /* USE_STDERR_SYSLOG */
-
-#if defined(USE_STDERR_FILEDESC)
-/* err_filedes() - report error via file descriptor */
-static void (err_filedes)(int fd, int flags, int errnum, const char *format, va_list args)
-{
-    char buffer[MAX_MSGLEN];
-    char *curpos = buffer;
-    char *bufend = buffer + sizeof(buffer);
-    ssize_t nbytes;
+    char *bufend = buffer + buflen;
 
     buffer[0] = '\0';   /* Not strictly necessary */
     if ((flags & ERR_NOARG0) == 0)
@@ -446,9 +421,67 @@ static void (err_filedes)(int fd, int flags, int errnum, const char *format, va_
     if (flags & ERR_ERRNO)
         curpos = fmt_strdots(curpos, bufend,
                              "error (%d) %s\n", errnum, strerror(errnum));
-    /* There's no sensible way to handle short writes! */
-    nbytes = write(fd, buffer, (size_t)(curpos - buffer));
-    assert(nbytes == curpos - buffer);
+    assert(curpos >= buffer);
+    return((size_t)(curpos - buffer));
+}
+
+/*
+** err_stdio - report error via stdio
+** Using fflush(fp) ensures that the message is flushed even if the
+** stream is fully buffered.
+** No longer need explicit flockfile() and funlockfile() because there's
+** only a single call to fprintf() and that must lock the stream anyway.
+*/
+static void (err_stdio)(FILE *fp, int flags, int errnum, const char *format, va_list args)
+{
+    char buffer[MAX_MSGLEN];
+    err_fmtmsg(buffer, sizeof(buffer), flags, errnum, format, args);
+    fprintf(fp, "%s", buffer);
+    fflush(fp);
+}
+
+#if defined(USE_STDERR_SYSLOG)
+/* err_syslog() - report error via syslog
+**
+** syslog() automatically adds PID and program name (configured in
+** openlog()) and time stamp.  Hence those elements are removed from
+** flags sent to err_fmtmsg.
+*/
+static void (err_syslog)(int flags, int errnum, const char *format, va_list args)
+{
+    char buffer[MAX_MSGLEN];
+    int priority;
+
+    err_fmtmsg(buffer, sizeof(buffer), flags & ~(ERR_NOARG0|ERR_PID|ERR_LOGTIME), errnum, format, args);
+
+    if (flags & ERR_ABORT)
+        priority = LOG_CRIT;
+    else if (flags & ERR_EXIT)
+        priority = LOG_ERR;
+    else
+        priority = LOG_WARNING;
+    syslog(priority, "%s", buffer);
+}
+#endif /* USE_STDERR_SYSLOG */
+
+#if defined(USE_STDERR_FILEDESC)
+/* err_filedes() - report error via file descriptor */
+static void (err_filedes)(int fd, int flags, int errnum, const char *format, va_list args)
+{
+    char buffer[MAX_MSGLEN];
+    size_t msglen = err_fmtmsg(buffer, sizeof(buffer), flags, errnum, format, args);
+    ssize_t nbytes;
+    char *msgbuf = buffer;
+
+    while (msglen > 0)
+    {
+        nbytes = write(fd, msgbuf, msglen);
+        if (nbytes <= 0)
+            break;
+        msgbuf += nbytes;
+        assert(nbytes > 0 && msglen >= (size_t)nbytes);
+        msglen -= (size_t)nbytes;
+    }
 }
 #endif /* USE_STDERR_FILEDESC */
 
@@ -678,7 +711,5 @@ void (err_internal)(const char *function, const char *format, ...)
 }
 
 #ifdef TEST
-
-#error Use separate test program test.stderr.c
-
+#include "test.stderr.c"
 #endif /* TEST */

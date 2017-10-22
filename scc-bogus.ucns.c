@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on broken Unicode characters
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2016
-@(#)Product:        SCC Version 6.60 (2016-06-12)
+@(#)Product:        SCC Version 6.70 (2017-10-17)
 */
 
 /* Compile with -fextended-identifiers */

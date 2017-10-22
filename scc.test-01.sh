@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-01.sh,v 1.8 2016/06/10 04:37:06 jleffler Exp $
+# @(#)$Id: scc.test-01.sh,v 1.9 2016/06/13 05:44:58 jleffler Exp $
 #
 # Test driver for SCC - comparing with reference version (SCC 5.05)
 
@@ -77,8 +77,8 @@ do
     # Old SCC is run as scc-5.05; normalize error messages from new SCC
     # to use that name too (to simplify comparisons).
     sed -e 's/:63:/:64:/' \
-        -e '/Double slash comment used/d' \
-        -e '/Universal character names feature/d' \
+        -e '/Double slash comment feature used/d' \
+        -e '/Universal character name feature used/d' \
         -e "s/^$T_BASE:/$R_BASE:/" \
         $tmp.4 > $tmp.5
     if [ -s $tmp.1 ] && [ -s $tmp.2 ] && cmp -s $tmp.1 $tmp.2 &&

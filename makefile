@@ -1,6 +1,8 @@
-# @(#)$Id: makefile,v 1.6 2016/06/11 22:26:40 jleffler Exp $
+# @(#)$Id: makefile,v 1.8 2017/10/18 05:50:43 jleffler Exp $
 #
-# Makefile for SCC (Strip C/C++ Comments)
+# Release Makefile for SCC (Strip C/C++ Comments)
+#
+# No access to JLSS libraries - use scc.mk for that.
 
 PROGRAM = scc
 SOURCE  = errhelp.c filter.c filterio.c stderr.c scc.c
@@ -28,6 +30,7 @@ TEST_SCRIPTS = \
 	scc.test-05.sh \
 	scc.test-06.sh \
 	scc.test-07.sh \
+	scc.test-08.sh \
 
 all: ${PROGRAM} ${TESTTOOLS}
 

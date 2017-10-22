@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-04.sh,v 1.3 2016/06/01 06:33:06 jleffler Exp $
+# @(#)$Id: scc.test-04.sh,v 1.4 2016/06/13 05:45:22 jleffler Exp $
 #
 # Test driver for SCC: -S C++14 and binary numbers, numeric punctuation
 
@@ -66,7 +66,12 @@ do
             diff "$tmp.2" "$EXPERR"
             test=1
         fi
-        if [ $test = 0 ]
+        if [ "$gflag" = yes ]
+        then
+            echo "== GENERATED == ($standard: $base.c)"
+            echo "                ($EXPOUT $EXPERR)"
+            : $((pass++))
+        elif [ $test = 0 ]
         then
             echo "== PASS == ($base.cpp)"
             : $((pass++))
