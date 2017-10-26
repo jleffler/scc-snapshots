@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on Unicode extended identifiers
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014,2016
-@(#)Product:        SCC Version 6.70 (2017-10-17)
+@(#)Product:        SCC Version 6.80 (2017-10-26)
 */
 
 /*

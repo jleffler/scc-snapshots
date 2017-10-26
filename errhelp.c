@@ -5,7 +5,7 @@
 @(#)Purpose:        Print usage and help message in standard format.
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2007-09
-@(#)Product:        SCC Version 6.70 (2017-10-17)
+@(#)Product:        SCC Version 6.80 (2017-10-26)
 */
 
 /*TABSTOP=4*/

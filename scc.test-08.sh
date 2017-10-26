@@ -1,11 +1,11 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-08.sh,v 1.1 2017/10/18 05:49:53 jleffler Exp $
+# @(#)$Id: scc.test-08.sh,v 1.2 2017/10/26 21:46:42 jleffler Exp $
 #
 # Test driver for SCC: Printing empty comments
 
 T_SCC=./scc             # Version of SCC under test
-RCSKW="${RCSKWREDUCE:-rcskwreduce}"
+RCSKWCMP="${RCSKWCMP:-rcskwcmp}"
 
 [ -x "$T_SCC" ] || ${MAKE:-make} "$T_SCC" || exit 1
 
@@ -33,7 +33,7 @@ done
 shift $((OPTIND - 1))
 [ "$#" = 0 ] || usage
 
-tmp=${TMPDIR:-/tmp}/scc-test
+tmp="${TMPDIR:-/tmp}/scc-test.$$"
 trap "rm -f $tmp.?; exit 1" 0 1 2 3 13 15
 
 OUTPUT_DIR=Output
@@ -53,7 +53,7 @@ do
     EXPERR="$OUTPUT_DIR/$base$options.2"
     if [ "$gflag" = yes ]
     then cp "$tmp.1" "$EXPOUT"
-    elif cmp -s <($RCSKW "$tmp.1") <($RCSKW "$EXPOUT")
+    elif $RCSKWCMP "$tmp.1" "$EXPOUT"
     then : OK
     else
         echo "Differences: $SOURCE - standard output"
@@ -62,7 +62,7 @@ do
     fi
     if [ "$gflag" = yes ]
     then cp "$tmp.2" "$EXPERR"
-    elif cmp -s <($RCSKW "$tmp.2") <($RCSKW "$EXPERR")
+    elif $RCSKWCMP "$tmp.2" "$EXPERR"
     then : OK
     else
         echo "Differences: $SOURCE - standard error"

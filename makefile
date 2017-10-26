@@ -1,4 +1,4 @@
-# @(#)$Id: makefile,v 1.8 2017/10/18 05:50:43 jleffler Exp $
+# @(#)$Id: makefile,v 1.9 2017/10/26 21:47:08 jleffler Exp $
 #
 # Release Makefile for SCC (Strip C/C++ Comments)
 #
@@ -20,7 +20,8 @@ BASH = bash
 .PHONEY: all test dev-test clean realclean depend
 
 TEST_TOOLS = \
-	rcskwreduce
+	rcskwcmp \
+	rcskwreduce \
 
 TEST_SCRIPTS = \
 	scc.test-01.sh \
@@ -32,12 +33,12 @@ TEST_SCRIPTS = \
 	scc.test-07.sh \
 	scc.test-08.sh \
 
-all: ${PROGRAM} ${TESTTOOLS}
+all: ${PROGRAM} ${TEST_TOOLS}
 
 ${PROGRAM}: ${OBJECT}
 	${CC} -o $@ ${CFLAGS} ${OBJECT} ${LDFLAGS} ${LDLIBES}
 
-test:	${PROGRAM} dev-test ${TESTTOOLS}
+test:	${PROGRAM} dev-test ${TEST_TOOLS}
 
 dev-test: ${TEST_SCRIPTS}
 	for test in ${TEST_SCRIPTS}; \

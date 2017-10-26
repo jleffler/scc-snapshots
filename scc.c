@@ -1189,7 +1189,7 @@ int main(int argc, char **argv)
             std_code = parse_std_arg(optarg);
             break;
         case 'V':
-            err_version("SCC", &"@(#)6.70 (2017-10-17)"[4]);
+            err_version("SCC", &"@(#)6.80 (2017-10-26)"[4]);
             break;
         default:
             err_usage(usestr);

@@ -5,7 +5,7 @@
 @(#)Purpose:        Perform standardized I/O error check for filter programs
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2003,2005,2008,2014
-@(#)Product:        SCC Version 6.70 (2017-10-17)
+@(#)Product:        SCC Version 6.80 (2017-10-26)
 */
 
 /*TABSTOP=4*/
