@@ -1,10 +1,10 @@
 /*
 @(#)File:           $RCSfile: scc.c,v $
-@(#)Version:        $Revision: 6.35 $
-@(#)Last changed:   $Date: 2017/10/18 06:39:47 $
+@(#)Version:        $Revision: 8.2 $
+@(#)Last changed:   $Date: 2022/05/21 19:22:21 $
 @(#)Purpose:        Strip C comments
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1991-2017
+@(#)Copyright:      (C) JLSS 1991-2022
 */
 
 /*TABSTOP=4*/
@@ -27,9 +27,7 @@
 **  strings should be ignored too, so a replacement character such as X
 **  works.  Without that, the command has to recognize C comments to
 **  know whether the unmatched quotes in them matter (they shouldn't).
-**  The -q option was added for symmetry with -s.  Maybe the options
-**  letters should be -d for double quotes and -s for single quotes; or
-**  maybe they should be -s for strings and -c for characters.
+**  The -q option was added for symmetry with -s.
 **
 **  Digraphs do not present a problem; the characters they represent do
 **  not need special handling.  Trigraphs do present a problem in theory
@@ -55,46 +53,55 @@
 **  trigraphs.
 **
 **  Hence we add -S <std> for standards C++98, C++03, C++11, C++14,
-**  C89, C99, C11.  For the purposes of this code, C++98 and C++03 are
-**  identical, and C99 and C11 are identical.  The default would be C11.
-**  This renders the -C flag irrelevant and removed.
+**  C++17, C89, C90, C99, C11, C18.  For the purposes of this code,
+**  C++98 and C++03 are identical, C89 and C90 are identical, and C99,
+**  C11 and C18 are identical.  The default is C18.
 **
 **  C11 and C++11 add support for u"literal", U"literal", u8"literal",
 **  and for u'char' and U'char' (but not u8'char').  Previously, the
 **  code needed no special handling for wide character strings L"x" or
 **  constants L'x', but now they have to be handled appropriately.
+**
+**  Note that comment stripping does not require 100% accurate
+**  tokenization.  For example, C++11 and later supports user-defined
+**  literals such as 1.234_km; it does not matter that SCC treats that
+**  as a number and an identifier, but a program that formally tokenizes
+**  C++ must recognize them.
 */
 
 #include "posixver.h"
-#include "filter.h"
-#include "stderr.h"
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "filter.h"
+#include "scc-version.h"
+#include "stderr.h"
 
 typedef enum { NonComment, CComment, CppComment } Comment;
 
 typedef enum
 {
-    C, C89, C90, C94, C99, C11,
+    C, C89, C90, C94, C99, C11, C18,
     CXX, CXX98, CXX03, CXX11, CXX14, CXX17
 } Standard;
 
 enum { MAX_RAW_MARKER = 16 };
-enum { LPAREN = '(', RPAREN = ')' }; 
+enum { LPAREN = '(', RPAREN = ')' };
 
 static const char std_name[][6] =
 {
-    [C]     = "C",      // Current C standard
-    [CXX]   = "C++",    // Current C++ standard
+    [C]     = "C",      // Current C standard (C18)
+    [CXX]   = "C++",    // Current C++ standard (C++17)
     [C89]   = "C89",
     [C90]   = "C90",
     [C94]   = "C94",
     [C99]   = "C99",
     [C11]   = "C11",
+    [C18]   = "C18",
     [CXX98] = "C++98",
     [CXX03] = "C++03",
     [CXX11] = "C++11",
@@ -120,11 +127,12 @@ static const char * const dq_raw_prefix[] = { "R", "LR", "uR", "UR", "u8R" };
 enum { NUM_DQ_REG_PREFIX = sizeof(dq_reg_prefix) / sizeof(dq_reg_prefix[0]) };
 enum { NUM_DQ_RAW_PREFIX = sizeof(dq_raw_prefix) / sizeof(dq_raw_prefix[0]) };
 
-static int std_code = C11;  /* Selected standard */
+static int std_code = C18;  /* Selected standard */
 
 static bool cflag = false;   /* Print comments and not code */
 static bool eflag = false;   /* Print empty comment instead of blank */
 static bool nflag = false;   /* Keep newlines in comments */
+static bool tflag = false;   /* Keep white space before/after comments */
 static bool wflag = false;   /* Warn about nested C-style comments */
 
 static int qchar = 0;   /* Replacement character for quotes */
@@ -144,30 +152,76 @@ static int l_nest = 0;  /* Last line with a nested comment warning */
 static int l_cend = 0;  /* Last line with a comment end warning */
 static bool l_comment = false;  /* Line contained a comment - print newline in -c mode */
 
-static const char optstr[] = "cefhnq:s:wS:V";
-static const char usestr[] = "[-cefhnwV][-S std][-s rep][-q rep] [file ...]";
+static const char optstr[] = "cefhnq:s:twS:V";
+static const char usestr[] = "[-cefhntwV][-S std][-s rep][-q rep] [file ...]";
 static const char hlpstr[] =
     "  -c      Print comments and not the code\n"
     "  -e      Print empty comment /* */ or //\n"
-    "  -f      Print flags in effect (debugging mainly)\n"
+    "  -f      Print features recognized for the standard (debugging mainly)\n"
     "  -h      Print this help and exit\n"
     "  -n      Keep newlines in comments\n"
-    "  -s rep  Replace the body of string literals with rep (a single character)\n"
     "  -q rep  Replace the body of character literals with rep (a single character)\n"
+    "  -s rep  Replace the body of string literals with rep (a single character)\n"
+    "  -t      Retain trailing white space\n"
     "  -w      Warn about nested C-style comments\n"
-    "  -S std  Specify language standard (C, C++, C89, C90, C99, C11, C++98, C++03,\n"
-    "          C++11, C++14, C++17; default C11)\n"
+    "  -S std  Specify language standard (C, C89, C90, C99, C11, C18;\n"
+    "          C++, C++98, C++03, C++11, C++14, C++17; default C18)\n"
     "  -V      Print version information and exit\n"
     ;
 
-/* Sequencing issue - preferably to be resolved without predeclaration */
-static Comment non_comment(int c, FILE *fp, const char *fn);
+static char   *whisp = 0;
+static size_t  whisp_size = 0;
+static size_t  whisp_off = 0;
 
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_c[];
-const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 6.35 2017/10/18 06:39:47 jleffler Exp $";
+const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 8.2 2022/05/21 19:22:21 jonathanleffler Exp $";
 #endif /* lint */
+
+/* Always maintain enough space in whisp for a null to be added */
+static void whisp_push(char c)
+{
+    if (whisp == 0 || whisp_off >= whisp_size - 1)
+    {
+        size_t new_size = whisp_size * 2 + 2;
+        void *new_whisp = realloc(whisp, new_size);
+        if (new_whisp == 0)
+            err_syserr("failed to allocate %zu bytes of memory: ", new_size);
+        whisp = new_whisp;
+        whisp_size = new_size;
+    }
+    whisp[whisp_off++] = c;
+}
+
+static void whisp_write(FILE *fp)
+{
+    if (whisp_off > 0)
+    {
+        whisp[whisp_off] = '\0';
+        fputs(whisp, fp);
+        whisp_off = 0;
+    }
+}
+
+static void whisp_clear(void)
+{
+    whisp_off = 0;
+}
+
+static void whisp_putchar(char c)
+{
+    if (isblank(c))
+        whisp_push(c);
+    else
+    {
+        if (tflag || c != '\n')
+            whisp_write(stdout);
+        else if (c == '\n')
+            whisp_clear();
+        putchar(c);
+    }
+}
 
 static int getch(FILE *fp)
 {
@@ -197,7 +251,7 @@ static int peek(FILE *fp)
 static void s_putch(char c)
 {
     if (!cflag || ((nflag || l_comment) && c == '\n'))
-        putchar(c);
+        whisp_putchar(c);
     if (c == '\n')
         l_comment = false;
 }
@@ -206,7 +260,7 @@ static void s_putch(char c)
 static void c_putch(char c)
 {
     if (cflag || (nflag && c == '\n'))
-        putchar(c);
+        whisp_putchar(c);
 }
 
 /* Output string of statement characters */
@@ -241,7 +295,8 @@ static void warn_feature(enum Feature feature, const char *fn)
 {
     assert(fn != 0);
     assert(feature >= F_HEXFLOAT && feature <= F_UNIVERSAL);
-    warningv("%s feature used but not supported in %s", fn, nline, feature_name[feature], std_name[std_code]);
+    warningv("%s feature used but not supported in %s", fn, nline,
+             feature_name[feature], std_name[std_code]);
 }
 
 static void put_quote_char(char q, char c)
@@ -263,25 +318,67 @@ static void put_quote_str(char q, char *str)
 
 static void endquote(char q, FILE *fp, const char *fn, const char *msg)
 {
-    int     c;
+    int c1;
 
-    while ((c = getch(fp)) != EOF && c != q)
+    while ((c1 = getch(fp)) != EOF && c1 != q)
     {
-        put_quote_char(q, c);
-        if (c == '\\')
+        if (c1 == '\\')
         {
-            if ((c = getch(fp)) == EOF)
+            int bs_count = 1;
+            int c2;
+            while ((c2 = getch(fp)) != EOF && c2 == '\\')
+                bs_count++;
+            if (c2 == EOF)
+            {
+                /* Stream of backslashes and newline - bug in source code */
+                for (int i = 0; i < bs_count; i++)
+                    put_quote_char(q, c1);
                 break;
-            put_quote_char(q, c);
-            if ((c == 'u' || c == 'U') && !f_Universal)
-                warn_feature(F_UNIVERSAL, fn);
-            if (c == '\\' && peek(fp) == '\n')
-                s_putch(getch(fp));
+            }
+            if (c2 == '\n')
+            {
+                /* The backslash-newline would be processed first */
+                /* Echo the other backslashes and then emit backslash-newline */
+                for (int i = 1; i < bs_count; i++)
+                    put_quote_char(q, c1);
+                s_putch(c1);
+                s_putch(c2);
+            }
+            else
+            {
+                /* Series of backslashes not ending BSNL */
+                /* Emit pairs of backslashes - then work out what to do */
+                for (int i = 0; i < bs_count - 1; i += 2)
+                    put_quote_str(q, "\\\\");
+
+                if (bs_count % 2 == 0)
+                {
+                    if (c2 == q)
+                    {
+                        s_putch(c2);
+                        return;
+                    }
+                }
+                else
+                {
+                    put_quote_char(q, c1);
+                    put_quote_char(q, c2);
+                    if ((c2 == 'u' || c2 == 'U') && !f_Universal)
+                        warn_feature(F_UNIVERSAL, fn);
+                }
+            }
         }
-        else if (c == '\n')
+        else if (c1 == '\n')
+        {
+            put_quote_char(q, c1);
             warning2("newline in", msg, fn, nline - 1);
+            /* Heuristic recovery - assume close quote at end of line */
+            return;
+        }
+        else
+            put_quote_char(q, c1);
     }
-    if (c == EOF)
+    if (c1 == EOF)
     {
         warning2("EOF in", msg, fn, nline);
         return;
@@ -357,7 +454,7 @@ static Comment c_comment(int c, FILE *fp, const char *fn)
             write_bsnl(bsnl, c_putch);
         }
     }
-    else if (wflag == 1 && c == '/' && peek(fp) == '*')
+    else if (wflag && c == '/' && peek(fp) == '*')
     {
         if (l_nest != nline)
             warning("nested C-style comment", fn, nline);
@@ -387,9 +484,9 @@ static Comment cpp_comment(int c, int oc)
 /* Backslash was read but not printed! u or U was peeked but not read */
 /*
 ** There's no compelling reason to handle UCNs - the code is supposed to
-** be valid before using SCC on it, and invalid UCNs there should not
-** appear.  OTOH, to report their use when not supported, you have to
-** detect their existence.
+** be valid before using SCC on it, and invalid UCNs therefore should
+** not appear.  OTOH, to report their use when not supported, you have
+** to detect their existence.
 */
 static void scan_ucn(int letter, int nbytes, FILE *fp, const char *fn)
 {
@@ -647,8 +744,14 @@ static void parse_number(int c, FILE *fp, const char *fn)
     }
     else if (isdigit(pc))
     {
-        /* Malformed number of some sort (09, for example) */
-        err_remark("0%c read - bogus number!\n", pc);
+        /*
+        ** Malformed number of some sort (09, for example).
+        ** Preprocessing numbers can contain all sorts of weird stuff.
+        ** 08 is valid as a preprocessing number, and has appeared in
+        ** macros.  It ended up as part of "%08X" or similar format
+        ** strings.  Hence, do not generate error message after all.
+        ** err_remark("0%c read - bogus number!\n", pc);
+        */
         s_putch(c);
     }
     else
@@ -702,7 +805,7 @@ static bool raw_scan_marker(char *markstr, int *marklen, const char *pfx, FILE *
 {
     int len = 0;
     int c;
-    char message[64];
+    char message[128];
     while ((c = getch(fp)) != EOF)
     {
         if (c == LPAREN)
@@ -760,7 +863,7 @@ static void raw_scan_string(const char *markstr, int marklen, FILE *fp, const ch
     while ((c = getch(fp)) != EOF)
     {
         if (c != RPAREN)
-            put_quote_char('"', c);
+            s_putch(c);
         else
         {
             char endstr[MAX_RAW_MARKER + 2];
@@ -781,15 +884,16 @@ static void raw_scan_string(const char *markstr, int marklen, FILE *fp, const ch
                 {
                     /* Restart scan for mark string */
                     endstr[len] = '\0';
-                    put_quote_char('"', RPAREN);
-                    put_quote_str('"', endstr);
+                    s_putch(RPAREN);
+                    s_putstr(endstr);
                     len = 0;
                 }
                 else
                 {
                     endstr[len] = '\0';
-                    put_quote_char('"', RPAREN);
-                    put_quote_str('"', endstr);
+                    s_putch(RPAREN);
+                    s_putstr(endstr);
+                    s_putch(c);
                     break;
                 }
             }
@@ -869,7 +973,8 @@ static void parse_dq_string(const char *prefix, FILE *fp, const char *fn)
         if (strcmp(prefix, "L") != 0 && !f_Unicode)
             warn_feature(F_UNICODE, fn);
         s_putstr(prefix);
-        (void)non_comment('"', fp, fn);
+        s_putch('"');
+        endquote('"', fp, fn, "string literal");
     }
 }
 
@@ -887,7 +992,8 @@ static void process_poss_string_literal(char c, FILE *fp, const char *fn)
             /* SCC will process it the same way, printing prefix and then processing single quote */
             s_putstr(prefix);
             c = getch(fp);
-            (void)non_comment(c, fp, fn);
+            s_putch(c);
+            endquote(c, fp, fn, "character constant");
             break;
         }
         else if (c == '"')
@@ -903,7 +1009,8 @@ static void process_poss_string_literal(char c, FILE *fp, const char *fn)
                 /* Invalid syntax - identifier followed by double quote */
                 s_putstr(prefix);
                 c = getch(fp);
-                (void)non_comment(c, fp, fn);
+                s_putch(c);
+                endquote(c, fp, fn, "character constant");
             }
             break;
         }
@@ -957,15 +1064,27 @@ static Comment non_comment(int c, FILE *fp, const char *fn)
 {
     int pc;
     Comment status = NonComment;
-    if (c == '*' && peek(fp) == '/')
+    if (c == '*')
     {
-        /* NB: does not detect star backslash newline slash as stray end of comment */
-        if (l_cend != nline)
-            warning("C-style comment end marker not in a comment",
-                    fn, nline);
-        l_cend = nline;
+        int bsnl = read_bsnl(fp);
+        if ((pc = peek(fp)) == '/')
+        {
+            c = getch(fp);
+            s_putch('*');
+            write_bsnl(bsnl, s_putch);
+            s_putch('/');
+            if (l_cend != nline)
+                warning("C-style comment end marker ('*/') not in a comment",
+                        fn, nline);
+            l_cend = nline;
+        }
+        else
+        {
+            s_putch(c);
+            write_bsnl(bsnl, s_putch);
+        }
     }
-    if (c == '\'')
+    else if (c == '\'')
     {
         s_putch(c);
         /*
@@ -1020,10 +1139,7 @@ static Comment non_comment(int c, FILE *fp, const char *fn)
             write_bsnl(bsnl, c_putch);
             c_putch(c);
             if (eflag)
-            {
-                s_putch('/');
-                s_putch('/');
-            }
+                s_putstr("//");
         }
         else
         {
@@ -1099,8 +1215,9 @@ static void set_features(int code)
     case C90:
     case C94:
         break;
-    case C:
+    case C:                     /* Current C standard is C18 */
     case C11:
+    case C18:
         f_Unicode = true;
         /*FALLTHROUGH*/
     case C99:
@@ -1108,6 +1225,7 @@ static void set_features(int code)
         f_Universal = true;
         f_DoubleSlash = true;
         break;
+    case CXX:                   /* Current C++ standard is C++17 */
     case CXX17:
         f_HexFloat = true;
         /*FALLTHROUGH*/
@@ -1115,7 +1233,6 @@ static void set_features(int code)
         f_Binary = true;
         f_NumPunct = true;
         /*FALLTHROUGH*/
-    case CXX:
     case CXX11:
         f_RawString = true;
         f_Unicode = true;
@@ -1182,6 +1299,9 @@ int main(int argc, char **argv)
         case 's':
             schar = *optarg;
             break;
+        case 't':
+            tflag = true;
+            break;
         case 'w':
             wflag = true;
             break;
@@ -1189,7 +1309,7 @@ int main(int argc, char **argv)
             std_code = parse_std_arg(optarg);
             break;
         case 'V':
-            err_version("SCC", &"@(#)6.80 (2017-10-26)"[4]);
+            err_version(cmdname_info, version_info);
             break;
         default:
             err_usage(usestr);
@@ -1199,7 +1319,10 @@ int main(int argc, char **argv)
 
     set_features(std_code);
     if (fflag)
+    {
         print_features(std_code);
+        return 0;
+    }
 
     filter(argc, argv, optind, scc);
     return(0);

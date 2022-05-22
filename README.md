@@ -5,17 +5,40 @@ This repository contains the code for the SCC (Strip C Comments) program
 described in [Remove Comments from C/C++
 Code](http://stackoverflow.com/questions/2394017/) on Stack Overflow.
 
-There are currently 7 releases:
-* 6.80 (2017-10-26) - stable release
-* 6.70 (2017-10-17) - stable release
-* 6.60 (2016-06-12) - stable release
-* 6.50 (2016-06-12) — pre-release
-* 6.16 (2016-01-19) — pre-release
-* 5.05 (2012-01-23) - stable release
-* 4.04 (2008-11-27) - stable release
-* 4.03 (2008-06-07) - stable release
+There are currently 8 releases:
+* 8.0.1 (2022-05-21) - stable release
+* 6.80  (2017-10-26) - stable release
+* 6.70  (2017-10-17) - stable release
+* 6.60  (2016-06-12) - stable release
+* 6.50  (2016-06-12) — pre-release
+* 6.16  (2016-01-19) — pre-release
+* 5.05  (2012-01-23) - stable release
+* 4.04  (2008-11-27) - stable release
+* 4.03  (2008-06-07) - stable release
 
 These are tagged release/x.yz.  The code is all on branch master.
+
+### Version 8.0.1 - 2022-05-21
+
+Primarily a bug fix release, dealing with a problem in C++ 'raw string'
+handling reported by Oleg Skinderev via GitHub.
+
+However, prior to that, 'internal' releases 7.00 (2018-11-1), 7.10
+(2018-11-12), 7.20 (2018-11-21), 7.30 (2019-01-27), 7.40 (2019-05-01)
+7.50 (2020-03-03), 7.80.0 (2022-01-06) and 8.0.0 (2022-04-07) had been
+created.
+These versions are not directly reflected in this Git repository, but
+the changes are present in 8.0.1.
+
+By default, SCC now strips trailing blanks; use the `-t` option to keep
+them.
+It no longer reports "bogus number" for 08 because that is a valid
+preprocessing number, even though it is isn't a valid octal constant.
+The `-f` (features) option lists the features and exits (rather than
+trying to process a file too).
+The version numbering was changed to 'semantic versioning'
+(https://emver.org/) and is now managed independently of the RCS file
+version numbers (which is still used to manage the 'internal releases').
 
 ### Version 6.80 - 2017-10-26
 

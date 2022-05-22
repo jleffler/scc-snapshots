@@ -6,17 +6,15 @@
 
 
 
- 
 
- 
+
+
 
 #ifndef lint
- 
+
 extern const char jlss_id_scc_rawstring_cpp[];
-const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring-c11.1,v 1.2 2016/06/11 22:13:56 jleffler Exp $";
-#endif  
-
- 
+const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring-c11.1,v 8.1 2022/05/21 19:18:57 jonathanleffler Exp $";
+#endif
 
 
 
@@ -29,27 +27,30 @@ const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring-c11.1,v 1.
 
 
 
- 
+
+
+
 
 char xyz[] = R"aa(/*
 not a comment
-*/)aa";   
-char abc[] = R"/*(not a comment)/*";   
+*/)aa";
+char abc[] = R"/*(not a comment)/*";
 char def[] = R"(a minimal sort of
-raw string)";  
-char ghi[] = u8R"utf8(characters—and more€‹›)utf8";     
+raw string)";
+char ghi[] = u8R"utf8(characters—and more€‹›)utf8";
 
-wchar_t jkl[] = LR"wide(characters appear here)wide";   
+wchar_t jkl[] = LR"wide(characters appear here)wide";
 
-char16_t mno[] = uR"RuR("Rossum's Universal Robots")RuR";   
+char16_t mno[] = uR"RuR("Rossum's Universal Robots")RuR";
 
-char32_t pqr[] = UR"RuR(close)are allowed)Ru)inside
+char32_t pqr[] = UR"RuR(close) are allowed)Ru)
+inside
 a
-raw)tring)RuR";  
+raw)string)RuR";
 
-char stu[] = u8R"??(xxx)??";  
+char stu[] = u8R"??(xxx)??";
 
- 
+
 char tuv[] = u8"\n"
     "\u00A0 = A0 U+00A0 NO-BREAK SPACE\n"
     "\u00A1 = A1 U+00A1 INVERTED EXCLAMATION MARK\n"
@@ -149,33 +150,43 @@ char tuv[] = u8"\n"
     "\u00FF = FF U+00FF LATIN SMALL LETTER Y WITH DIAERESIS\n"
     ;
 
- 
+
 const char *p = R"(a\
 b
-c)";     
+c)";
 const char *q = "a\\\nb\nc";
 
- 
+
 const char *mix =
 
 R"a(
-)
+)\
 a"
-)a"  
-" is equivalent to " "\n)\\\na\"\n"  
-R"(??)"  
-"\?\?"  
+)a"
+" is equivalent to " "\n)\\\na\"\n"
+R"(??)"
+"\?\?"
 R"#(
-)?="
-)#"  
-"\n)\?\?=\"\n";  
+)??="
+)#"
+"\n)\?\?=\"\n";
 
- 
 
-const char *a01 = R"aa( )a)s )aa )aa)aa";  
+
+const char *a01 = R"aa( )a )bs )aaa )aa )aa";
 const char *a02 = R"abcdefghijklmnop( hoops to jump through )abcdefghijklmnop";
 
 const char *a05 = R"abcdefghijklmnop( hoops
-to jump through )abcdefghijklmnop)abc))abcdefghijklmnop
-)abcdefghijklmnop";    
+to jump through )abcdefghijklmnop)abc))abcdefghijklmnopq
+)abcdefghijklmnop";
 
+#if defined(REGEX_TYPE_DEFINED)
+
+
+static regex incl1{R"/(\s*#\s*include\s*"([^"]*)"\s*)/"};
+static regex incl2{R"/(\s*#\s*include\s*<([^>]*)>\s*)/"};
+
+
+static regex incl1{R"/(\s*#\s*include\s*"([^"]*)\s*)/"};
+static regex incl2{R"/(\s*#\s*include\s*<([^>]*)\s*)/"};
+#endif

@@ -1,13 +1,15 @@
 #!/bin/bash
 #
-# @(#)$Id: scc.test-06.sh,v 1.4 2017/10/26 21:46:42 jleffler Exp $
+# @(#)$Id: scc.test-06.sh,v 8.1 2022/04/07 00:40:18 jleffler Exp $
 #
 # Test driver for SCC: using -c, -n in combination
 #
 # NB: This is a Bash script because it uses command substitution
 
 T_SCC=./scc             # Version of SCC under test
-RCSKWCMP="${RCSKWCMP:-rcskwcmp}"
+RCSKWCMP="${RCSKWCMP:-./rcskwcmp}"
+RCSKWREDUCE="${RCSKWREDUCE:-./rcskwreduce}"
+export RCSKWCMP RCSKWREDUCE
 
 [ -x "$T_SCC" ] || ${MAKE:-make} "$T_SCC" || exit 1
 
@@ -58,8 +60,8 @@ do
         elif $RCSKWCMP "$tmp.1" "$EXPOUT" 
         then : OK
         else
-            echo "Differences: $EXPECT - standard output"
-            diff "$tmp.1" "$EXPOUT"
+            echo "Differences: $EXPECT - standard output (wanted vs actual)"
+            diff "$EXPOUT" "$tmp.1"
             test=1
         fi
         if [ "$gflag" = yes ]
@@ -67,8 +69,8 @@ do
         elif $RCSKWCMP "$tmp.2" "$EXPERR" 
         then : OK
         else
-            echo "Differences: $EXPECT - standard error"
-            diff "$tmp.2" "$EXPERR"
+            echo "Differences: $EXPECT - standard error (wanted vs actual)"
+            diff "$EXPERR" "$tmp.2"
             test=1
         fi
         if [ "$gflag" = yes ]

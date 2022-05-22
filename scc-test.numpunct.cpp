@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on numbers with C++14 punctuation
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014-15
-@(#)Product:        SCC Version 6.80 (2017-10-26)
+@(#)Product:        SCC Version 8.0.1 (2022-05-21)
 */
 
 float f1 = 0x12'34'45p-12;

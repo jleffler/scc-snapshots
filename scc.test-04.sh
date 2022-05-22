@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-04.sh,v 1.4 2016/06/13 05:45:22 jleffler Exp $
+# @(#)$Id: scc.test-04.sh,v 8.1 2022/04/07 00:40:18 jleffler Exp $
 #
 # Test driver for SCC: -S C++14 and binary numbers, numeric punctuation
 
@@ -53,8 +53,8 @@ do
         elif cmp -s "$tmp.1" "$EXPOUT"
         then : OK
         else
-            echo "Differences: $base.cpp - standard output"
-            diff "$tmp.1" "$EXPOUT"
+            echo "Differences: $base.cpp ($standard) - standard output (wanted vs actual)"
+            diff "$EXPOUT" "$tmp.1"
             test=1
         fi
         if [ "$gflag" = yes ]
@@ -62,8 +62,8 @@ do
         elif cmp -s "$tmp.2" "$EXPERR"
         then : OK
         else
-            echo "Differences: $base.cpp - standard error"
-            diff "$tmp.2" "$EXPERR"
+            echo "Differences: $base.cpp ($standard) - standard error (wanted vs actual)"
+            diff "$EXPERR" "$tmp.2"
             test=1
         fi
         if [ "$gflag" = yes ]
@@ -73,10 +73,10 @@ do
             : $((pass++))
         elif [ $test = 0 ]
         then
-            echo "== PASS == ($base.cpp)"
+            echo "== PASS == ($standard: $base.cpp)"
             : $((pass++))
         else
-            echo "!! FAIL !! ($base.cpp)"
+            echo "!! FAIL !! ($standard: $base.cpp)"
             : $((fail++))
         fi
         rm -f "$tmp".?

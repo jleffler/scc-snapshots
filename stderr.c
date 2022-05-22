@@ -1,26 +1,31 @@
 /*
 @(#)File:           $RCSfile: stderr.c,v $
-@(#)Version:        $Revision: 10.19 $
-@(#)Last changed:   $Date: 2017/07/10 04:54:26 $
+@(#)Version:        $Revision: 10.28 $
+@(#)Last changed:   $Date: 2022/04/03 21:05:51 $
 @(#)Purpose:        Error reporting routines
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 1988-2017
-@(#)Product:        SCC Version 6.80 (2017-10-26)
+@(#)Copyright:      (C) JLSS 1988-2022
+@(#)Product:        SCC Version 8.0.1 (2022-05-21)
 */
 
 /*TABSTOP=4*/
 
 /*
 ** Configuration:
-** USE_STDERR_SYSLOG   - include syslog functionality
-** USE_STDERR_FILEDESC - include file descriptor functionality
-** JLSS_STDERR         - force support for syslog and file descriptors
+** USE_STDERR_SYSLOG    - Include syslog functionality
+** USE_STDERR_FILEDESC  - Include file descriptor functionality
+** JLSS_STDERR          - Force support for syslog and file descriptors
 **
-** HAVE_UNISTD_H
-** HAVE_CLOCK_GETTIME
-** HAVE_GETTIMEOFDAY
-** HAVE_SYSLOG_H
-** HAVE_SYSLOG
+** NO_UNISTD_H          - Define if <unistd.h> is missing (assumed present).
+**                      - Not part of autoconf-generated config.h; that defines
+**                        HAVE_UNISTD_H, but using NO_UNISTD_H means the code
+**                        normally compiles using <unistd.h> even without
+**                        config.h (HAVE_CONFIG_H).
+**
+** HAVE_CLOCK_GETTIME   - Define if clock_gettime() is available (nanoseconds)
+** HAVE_GETTIMEOFDAY    - Define if gettimeofday() is available (microseconds)
+** HAVE_SYSLOG_H        - Define if <syslog.h> is available
+** HAVE_SYSLOG          - Define if syslog() is available
 */
 
 #include "posixver.h"
@@ -33,14 +38,15 @@
 #include <stdarg.h>
 #include <time.h>
 
-#ifdef HAVE_UNISTD_H
+#ifndef NO_UNISTD_H
 #include <unistd.h>
 #else
 extern int getpid(void);
-#endif /* HAVE_UNISTD_H */
+#endif /* NO_UNISTD_H */
 
+/* Some help messages can be very long */
 #ifndef ERR_MAXMSGLEN
-#define ERR_MAXMSGLEN 2048
+#define ERR_MAXMSGLEN 8192
 #endif
 enum { MAX_MSGLEN = ERR_MAXMSGLEN };
 
@@ -83,12 +89,12 @@ enum { ERR_LOGOPTS = ERR_NOFLUSH | ERR_EXIT | ERR_ABORT | ERR_LOGTIME |
 static int   err_flags = 0;     /* Default error flags (ERR_STAMP, ERR_PID, etc) */
 
 /* Where do messages go?
-**  if   (defined USE_STDERR_SYSLOG && errlog != 0) ==> syslog
+**  if   (defined USE_STDERR_SYSLOG && use_syslog != 0) ==> syslog
 **  elif (err_fd >= 0)                       ==> file descriptor
 **  else                                     ==> file pointer
 */
 #ifdef USE_STDERR_SYSLOG
-static int   errlog =  0;
+static int   use_syslog =  0;
 #endif /* USE_STDERR_SYSLOG */
 static FILE *errout =  0;
 #ifdef USE_STDERR_FILEDESC
@@ -110,16 +116,18 @@ static int   err_fd = -1;
 ** NB: no-return and printf-like can only be attached to declarations, not definitions.
 */
 
-static NORETURN void err_vxf_print(FILE *fp, int flags, int estat, const char *format, va_list args);
-static NORETURN void err_vxn_print(int flags, int estat, const char *format, va_list args);
+static NORETURN void err_vxf_print(FILE *fp, int flags, int errnum, int estat,
+                                   const char *format, va_list args);
+static NORETURN void err_vxn_print(int flags, int errnum, int estat,
+                                   const char *format, va_list args);
 static NORETURN void err_exn_print(int flags, int estat, const char *format, ...)
-                PRINTFLIKE(3,4);
+                PRINTFLIKE(3, 4);
 static NORETURN void err_terminate(int flags, int estat);
 
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_stderr_c[];
-const char jlss_id_stderr_c[] = "@(#)$Id: stderr.c,v 10.19 2017/07/10 04:54:26 jleffler Exp $";
+const char jlss_id_stderr_c[] = "@(#)$Id: stderr.c,v 10.28 2022/04/03 21:05:51 jleffler Exp $";
 #endif /* lint */
 
 /*
@@ -187,7 +195,6 @@ int (err_use_fd)(int new_fd)
 #if defined(USE_STDERR_SYSLOG)
 /*
 ** Configure the use of syslog
-** If not configured to use syslog(), this is a no-op.
 ** If configured to use syslog(), the facility argument should be one of
 ** the standard facilities (POSIX defines LOG_USER and LOG_LOCAL0 to
 ** LOG_LOCAL7) to turn on syslog(), or a negative value to turn it off.
@@ -205,14 +212,14 @@ int (err_use_syslog)(int logopts, int facility)
     {
         /* Turn off syslog() */
         closelog();
-        errlog = 0;
+        use_syslog = 0;
     }
     else
     {
         openlog(arg0, LOG_PID|logopts, facility);
-        errlog = 1;
+        use_syslog = 1;
     }
-    return(errlog);
+    return(use_syslog);
 }
 #endif /* USE_STDERR_SYSLOG */
 
@@ -274,7 +281,7 @@ const char *(err_rcs_string)(const char *s2, char *buffer, size_t buflen)
 
     /*
     ** Bother RCS!  We've probably been given something like:
-    ** "$Revision: 10.19 $ ($Date: 2017/07/10 04:54:26 $)"
+    ** "$Revision: 10.28 $ ($Date: 2022/04/03 21:05:51 $)"
     ** We only want to emit "7.5 (2001/08/11 06:25:48)".
     ** Skip the components between '$' and ': ', copy up to ' $',
     ** repeating as necessary.  And we have to test for overflow!
@@ -354,8 +361,8 @@ static Time now(void)
     return clk;
 }
 
-/* Format a time string for now (using ISO8601 format) */
-/* Allow for future settable time format with tm_format */
+/* Format a time string for now (using ISO8601 format by default) */
+/* The time format can be set via err_settimeformat() */
 static char *err_time(int flags, char *buffer, size_t buflen)
 {
     Time clk = now();
@@ -377,7 +384,8 @@ static char *err_time(int flags, char *buffer, size_t buflen)
     return(buffer);
 }
 
-static char *fmt_string(char *curr, const char *end, const char *format, va_list args)
+/* Format string - va_list */
+static char *vfmt_string(char *curr, const char *end, const char *format, va_list args)
 {
     char *new_end = curr;
     if (curr < end - 1)
@@ -390,36 +398,38 @@ static char *fmt_string(char *curr, const char *end, const char *format, va_list
     return(new_end);
 }
 
-static char *fmt_strdots(char *curr, const char *end, const char *format, ...)
+/* Format string - ellipsis */
+static char *efmt_string(char *curr, const char *end, const char *format, ...)
 {
     va_list args;
     char *new_end;
     va_start(args, format);
-    new_end = fmt_string(curr, end, format, args);
+    new_end = vfmt_string(curr, end, format, args);
     va_end(args);
     return new_end;
 }
 
-static size_t err_fmtmsg(char *buffer, size_t buflen, int flags, int errnum, const char *format, va_list args)
+static size_t err_fmtmsg(char *buffer, size_t buflen, int flags, int errnum,
+                         const char *format, va_list args)
 {
     char *curpos = buffer;
     char *bufend = buffer + buflen;
 
     buffer[0] = '\0';   /* Not strictly necessary */
     if ((flags & ERR_NOARG0) == 0)
-        curpos = fmt_strdots(curpos, bufend, "%s: ", arg0);
+        curpos = efmt_string(curpos, bufend, "%s: ", arg0);
     if (flags & ERR_LOGTIME)
     {
         char timbuf[32];
-        curpos = fmt_strdots(curpos, bufend,
+        curpos = efmt_string(curpos, bufend,
                              "%s - ", err_time(flags, timbuf, sizeof(timbuf)));
     }
     if (flags & ERR_PID)
-        curpos = fmt_strdots(curpos, bufend,
+        curpos = efmt_string(curpos, bufend,
                              "pid=%d: ", (int)getpid());
-    curpos = fmt_string(curpos, bufend, format, args);
+    curpos = vfmt_string(curpos, bufend, format, args);
     if (flags & ERR_ERRNO)
-        curpos = fmt_strdots(curpos, bufend,
+        curpos = efmt_string(curpos, bufend,
                              "error (%d) %s\n", errnum, strerror(errnum));
     assert(curpos >= buffer);
     return((size_t)(curpos - buffer));
@@ -430,13 +440,13 @@ static size_t err_fmtmsg(char *buffer, size_t buflen, int flags, int errnum, con
 ** Using fflush(fp) ensures that the message is flushed even if the
 ** stream is fully buffered.
 ** No longer need explicit flockfile() and funlockfile() because there's
-** only a single call to fprintf() and that must lock the stream anyway.
+** only a single call to fwrite() and that must lock the stream anyway.
 */
 static void (err_stdio)(FILE *fp, int flags, int errnum, const char *format, va_list args)
 {
     char buffer[MAX_MSGLEN];
-    err_fmtmsg(buffer, sizeof(buffer), flags, errnum, format, args);
-    fprintf(fp, "%s", buffer);
+    size_t msglen = err_fmtmsg(buffer, sizeof(buffer), flags, errnum, format, args);
+    fwrite(buffer, sizeof(char), msglen, fp);
     fflush(fp);
 }
 
@@ -452,7 +462,8 @@ static void (err_syslog)(int flags, int errnum, const char *format, va_list args
     char buffer[MAX_MSGLEN];
     int priority;
 
-    err_fmtmsg(buffer, sizeof(buffer), flags & ~(ERR_NOARG0|ERR_PID|ERR_LOGTIME), errnum, format, args);
+    err_fmtmsg(buffer, sizeof(buffer), flags & ~(ERR_NOARG0|ERR_PID|ERR_LOGTIME),
+               errnum, format, args);
 
     if (flags & ERR_ABORT)
         priority = LOG_CRIT;
@@ -486,15 +497,13 @@ static void (err_filedes)(int fd, int flags, int errnum, const char *format, va_
 #endif /* USE_STDERR_FILEDESC */
 
 /* Most fundamental (and flexible) error message printing routine - always returns */
-static void (err_vrf_print)(FILE *fp, int flags, const char *format, va_list args)
+static void (err_vrf_print)(FILE *fp, int flags, int errnum, const char *format, va_list args)
 {
-    int errnum = errno;     /* Capture errno before it is damaged! */
-
     if ((flags & ERR_NOFLUSH) == 0)
         fflush(0);
 
 #if defined(USE_STDERR_SYSLOG)
-    if (errlog)
+    if (use_syslog)
         err_syslog(flags, errnum, format, args);
     else
 #endif /* USE_STDERR_SYSLOG */
@@ -504,8 +513,6 @@ static void (err_vrf_print)(FILE *fp, int flags, const char *format, va_list arg
     else
 #endif /* USE_STDERR_FILEDESC */
         err_stdio(fp, flags, errnum, format, args);
-
-    fflush(fp);
 }
 
 /* Terminate program - abort or exit */
@@ -518,71 +525,72 @@ static void err_terminate(int flags, int estat)
 }
 
 /* Most fundamental (and flexible) error message printing routine - may return */
-static void (err_vcf_print)(FILE *fp, int flags, int estat, const char *format, va_list args)
+void (err_vlogmsg)(FILE *fp, int flags, int estat, const char *format, va_list args)
 {
-    err_vrf_print(fp, flags, format, args);
+    err_vrf_print(fp, flags, errno, format, args);
     if (flags & (ERR_ABORT|ERR_EXIT))
         err_terminate(flags, estat);
 }
 
-/* Analog of err_vcf_print() which guarantees 'no return' */
-static void (err_vxf_print)(FILE *fp, int flags, int estat, const char *format, va_list args)
+/* Analog of err_vlogmsg() which guarantees 'no return' */
+static NORETURN void (err_vxf_print)(FILE *fp, int flags, int errnum, int estat,
+                            const char *format, va_list args)
 {
-    err_vrf_print(fp, flags, format, args);
+    err_vrf_print(fp, flags, errnum, format, args);
     err_terminate(flags, estat);
 }
 
-/* External interface to err_vcf_print() - may return */
+/* Alternative external interface to err_vlogmsg() - may return */
 void (err_logmsg)(FILE *fp, int flags, int estat, const char *format, ...)
 {
     va_list         args;
 
     va_start(args, format);
-    err_vcf_print(fp, flags, estat, format, args);
+    err_vlogmsg(fp, flags, estat, format, args);
     va_end(args);
 }
 
 /* Print error message to current error output - no return */
-static void (err_vxn_print)(int flags, int estat, const char *format, va_list args)
+static NORETURN void (err_vxn_print)(int flags, int errnum, int estat, const char *format, va_list args)
 {
     if (errout == 0)
         errout = stderr;
-    err_vxf_print(errout, flags, estat, format, args);
+    err_vxf_print(errout, flags, errnum, estat, format, args);
 }
 
 /* Print error message to current error output - no return */
-static void err_exn_print(int flags, int estat, const char *format, ...)
+static NORETURN void err_exn_print(int flags, int estat, const char *format, ...)
 {
     va_list args;
 
     va_start(args, format);
-    err_vxn_print(flags, estat, format, args);
+    err_vxn_print(flags, errno, estat, format, args);
     va_end(args);
 }
 
-/* Print error message to nominated output - always returns */
+/* Print error message to nominated output - returns unless flags say exit */
 static void err_erf_print(FILE *fp, int flags, const char *format, ...)
 {
     va_list args;
 
     va_start(args, format);
-    err_vrf_print(fp, flags, format, args);
+    err_vrf_print(fp, flags, errno, format, args);
     va_end(args);
 }
 
-/* Print message using current error file */
+/* Print message using current error file - may return */
 void (err_print)(int flags, int estat, const char *format, va_list args)
 {
     if (errout == 0)
         errout = stderr;
-    err_vcf_print(errout, flags, estat, format, args);
+    err_vlogmsg(errout, flags, estat, format, args);
 }
 
-static void err_vrn_print(int flags, const char *format, va_list args)
+static void err_vrn_print(int flags, int errnum, const char *format, va_list args)
 {
     if (errout == 0)
         errout = stderr;
-    err_vrf_print(errout, flags, format, args);
+    err_vrf_print(errout, flags, errnum, format, args);
 }
 
 /* Report warning including message from errno */
@@ -591,7 +599,7 @@ void (err_sysrem)(const char *format, ...)
     va_list         args;
 
     va_start(args, format);
-    err_vrn_print(ERR_SYSREM | err_getlogopts(), format, args);
+    err_vrn_print(ERR_SYSREM | err_getlogopts(), errno, format, args);
     va_end(args);
 }
 
@@ -599,13 +607,10 @@ void (err_sysrem)(const char *format, ...)
 void (err_sysremark)(int errnum, const char *format, ...)
 {
     va_list         args;
-    int old_errno = errno;
 
-    errno = errnum;
     va_start(args, format);
-    err_vrn_print(ERR_SYSREM | err_getlogopts(), format, args);
+    err_vrn_print(ERR_SYSREM | err_getlogopts(), errnum, format, args);
     va_end(args);
-    errno = old_errno;
 }
 
 /* Report error including message from errno */
@@ -614,7 +619,7 @@ void (err_syserr)(const char *format, ...)
     va_list         args;
 
     va_start(args, format);
-    err_vxn_print(ERR_SYSERR | err_getlogopts(), ERR_STAT, format, args);
+    err_vxn_print(ERR_SYSERR | err_getlogopts(), errno, ERR_STAT, format, args);
     va_end(args);
 }
 
@@ -622,13 +627,10 @@ void (err_syserr)(const char *format, ...)
 void (err_syserror)(int errnum, const char *format, ...)
 {
     va_list         args;
-    int old_errno = errno;
 
-    errno = errnum;
     va_start(args, format);
-    err_vxn_print(ERR_SYSERR | err_getlogopts(), ERR_STAT, format, args);
+    err_vxn_print(ERR_SYSERR | err_getlogopts(), errnum, ERR_STAT, format, args);
     va_end(args);
-    errno = old_errno;
 }
 
 /* Report warning */
@@ -637,7 +639,7 @@ void (err_remark)(const char *format, ...)
     va_list         args;
 
     va_start(args, format);
-    err_vrn_print(ERR_REM | err_getlogopts(), format, args);
+    err_vrn_print(ERR_REM | err_getlogopts(), errno, format, args);
     va_end(args);
 }
 
@@ -647,7 +649,7 @@ void (err_error)(const char *format, ...)
     va_list         args;
 
     va_start(args, format);
-    err_vxn_print(ERR_ERR | err_getlogopts(), ERR_STAT, format, args);
+    err_vxn_print(ERR_ERR | err_getlogopts(), errno, ERR_STAT, format, args);
     va_end(args);
 }
 
@@ -661,10 +663,40 @@ void (err_report)(int flags, int estat, const char *format, ...)
     va_end(args);
 }
 
+/* Format possibly multi-line usage message */
+void err_fmt_usage(size_t buflen, char *buffer, const char *s1)
+{
+    const char *nl = strchr(s1, '\n');
+    if (nl != 0 && nl[1] != ' ' && nl[1] != '\0')
+    {
+        /* Indent second and subsequent lines by length of usage + arg0 */
+        int arg0_len = strlen(arg0);
+        char *bufptr = buffer;
+        int out_len = snprintf(bufptr, buflen, "Usage: %s %.*s\n", arg0, (int)(nl - s1), s1);
+        bufptr += out_len;
+        buflen -= out_len;
+        const char *eol;
+        while ((eol = strchr(nl + 1, '\n')) != 0)
+        {
+            out_len = snprintf(bufptr, buflen, "%-*s%*s %.*s\n", (int)sizeof("Usage:"), "",
+                               arg0_len, "", (int)(eol - (nl + 1)), nl + 1);
+            bufptr += out_len;
+            buflen -= out_len;
+            nl = eol;
+        }
+        out_len = snprintf(bufptr, buflen, "%-*s%*s %s", (int)sizeof("Usage:"), "",
+                           arg0_len, "", nl + 1);
+    }
+    else
+        snprintf(buffer, buflen, "Usage: %s %s", arg0, s1);
+}
+
 /* Print usage message and exit with failure status */
 void (err_usage)(const char *s1)
 {
-    err_exn_print(ERR_NOARG0|ERR_EXIT, EXIT_FAILURE, "Usage: %s %s\n", err_getarg0(), s1);
+    char buffer[MAX_MSGLEN];    /* Fairly big chunk of stack! */
+    err_fmt_usage(sizeof(buffer), buffer, s1);
+    err_exn_print(ERR_NOARG0|ERR_EXIT, EXIT_FAILURE, "%s\n", buffer);
 }
 
 /* Report failure and generate core dump */
@@ -673,7 +705,7 @@ void (err_abort)(const char *format, ...)
     va_list         args;
 
     va_start(args, format);
-    err_vxn_print(ERR_ABORT | err_getlogopts(), EXIT_FAILURE, format, args);
+    err_vxn_print(ERR_ABORT | err_getlogopts(), errno, EXIT_FAILURE, format, args);
     va_end(args);
 }
 
@@ -700,13 +732,14 @@ void (err_internal)(const char *function, const char *format, ...)
 {
     va_list args;
     int flags = ERR_EXIT;
+    int errnum = errno;     /* Capture errno before it gets changed */
     const char *ev = getenv("JLSS_INTERNAL_ERROR_ABORT");
 
     va_start(args, format);
     if (ev != 0 && *ev != '\0')
         flags = ERR_ABORT;  /* Generate core dump */
     err_remark("unrecoverable internal error in function %s():\n", function);
-    err_vxn_print(flags | err_getlogopts(), EXIT_FAILURE, format, args);
+    err_vxn_print(flags | err_getlogopts(), errnum, EXIT_FAILURE, format, args);
     va_end(args);
 }
 

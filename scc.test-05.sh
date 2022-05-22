@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-05.sh,v 1.4 2016/06/13 05:45:22 jleffler Exp $
+# @(#)$Id: scc.test-05.sh,v 8.1 2022/04/07 00:40:18 jleffler Exp $
 #
 # Test driver for SCC: Handling of Unicode characters and strings
 
@@ -55,8 +55,8 @@ do
         elif cmp -s "$tmp.1" "$EXPOUT"
         then : OK
         else
-            echo "Differences: $base-$standard.c - standard output"
-            diff "$tmp.1" "$EXPOUT"
+            echo "Differences: $standard: $base - standard output (wanted vs actual)"
+            diff "$EXPOUT" "$tmp.1"
             test=1
         fi
         if [ "$gflag" = yes ]
@@ -64,8 +64,8 @@ do
         elif cmp -s "$tmp.2" "$EXPERR"
         then : OK
         else
-            echo "Differences: $base-$standard.c - standard error"
-            diff "$tmp.2" "$EXPERR"
+            echo "Differences: $standard: $base - standard error (wanted  vs actual)"
+            diff "$EXPERR" "$tmp.2"
             test=1
         fi
         if [ "$gflag" = yes ]

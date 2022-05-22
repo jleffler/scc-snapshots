@@ -6,11 +6,11 @@
 
 
 
- 
 
- 
 
- 
+
+
+
 
 extern int id\u0xyz;        // Bogus
 extern int id\u01xyz;       // Bogus
@@ -25,8 +25,8 @@ extern int \U000xyz;        // Bogus
 extern int \U0Fxyz;         // Bogus
 extern int \U0xyz;          // Bogus
 
- 
- 
+
+
 extern char bogus_ucns[];
 char bogus_ucns[] =  // These UCNs are all invalid
     "\u0000"
@@ -80,7 +80,7 @@ char bogus_ucns[] =  // These UCNs are all invalid
     "\U000EFFFF"        // Not a character
     ;
 
-/* Valid characters */
+
 extern char valid_ucns[];
 char valid_ucns[] =
     // From section 6.4.3 Universal character names

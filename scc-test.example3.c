@@ -5,7 +5,7 @@
 @(#)Purpose:        Test handling of C11 (and C++11) Unicode characters and strings.
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2016
-@(#)Product:        SCC Version 6.80 (2017-10-26)
+@(#)Product:        SCC Version 8.0.1 (2022-05-21)
 */
 
 #include <wchar.h>  /* wchar_t */

@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# @(#)$Id: scc.test-03.sh,v 1.3 2016/05/31 00:40:45 jleffler Exp $
+# @(#)$Id: scc.test-03.sh,v 1.4 2018/11/11 22:49:27 jleffler Exp $
 #
 # Test driver for SCC: standard versions and feature sets
 
@@ -35,6 +35,7 @@ C89
 C94
 C99   comments universal.character.names hexadecimal.float
 C11   comments universal.character.names hexadecimal.float unicode.strings
+C18   comments universal.character.names hexadecimal.float unicode.strings
 C++98 comments universal.character.names
 C++03 comments universal.character.names
 C++11 comments universal.character.names raw.strings unicode.strings

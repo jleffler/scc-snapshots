@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: scc-test.rawstring.cpp,v $
-@(#)Version:        $Revision: 1.4 $
-@(#)Last changed:   $Date: 2016/06/11 22:13:56 $
+@(#)Version:        $Revision: 8.1 $
+@(#)Last changed:   $Date: 2022/05/21 19:16:48 $
 @(#)Purpose:        Test SCC on C++11 raw strings
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014-15
-@(#)Product:        SCC Version 6.80 (2017-10-26)
+@(#)Product:        SCC Version 8.0.1 (2022-05-21)
 */
 
 /*TABSTOP=4*/
@@ -13,7 +13,7 @@
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_rawstring_cpp[];
-const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 1.4 2016/06/11 22:13:56 jleffler Exp $";
+const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 8.1 2022/05/21 19:16:48 jonathanleffler Exp $";
 #endif /* lint */
 
 /* NB: This requires C++11 or C++14 support to compile; C++98 is not adequate */
@@ -180,3 +180,13 @@ const char *a05 = R"abcdefghijklmnop( hoops
 to jump through )abcdefghijklmnop)abc))abcdefghijklmnopq
 )abcdefghijklmnop";   /* And a final comment */
 
+#if defined(REGEX_TYPE_DEFINED)
+/* Bug report from Oleg Skinderev 2022-05-22 via GitHub */
+/* Input string - should be unchanged */
+static regex incl1{R"/(\s*#\s*include\s*"([^"]*)"\s*)/"};
+static regex incl2{R"/(\s*#\s*include\s*<([^>]*)>\s*)/"};
+/* Buggy output - should be the same as the input but wasn't */
+/* NB: to stand a chance of compiling, rename incl1 to incl3, incl2 to incl4 */
+static regex incl1{R"/(\s*#\s*include\s*"([^"]*)\s*)/"};
+static regex incl2{R"/(\s*#\s*include\s*<([^>]*)\s*)/"};
+#endif /* REGEX_TYPE_DEFINED */

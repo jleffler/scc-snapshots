@@ -1,0 +1,18 @@
+/*
+** @(#)$Id: scc.test-10.endcomment-c.1,v 7.1 2019/01/26 07:28:02 jonathanleffler Exp $
+**
+** Test SCC handling of * in general program text followed by a
+** backslash-newline (bsnl) sequence and then / (a bogus end comment
+** marker).
+*/
+/* The next comment is legitimate - well, sort of legitimate */
+/\
+\
+\
+*\ comment \
+*\
+/
+/* This next end comment marker is not legitimate */
+/* There are two end comment markers on the next line; one complaint! */
+/* There are two end comment markers in the following block */
+/* EOF */

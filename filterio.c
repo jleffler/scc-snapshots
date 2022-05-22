@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: filterio.c,v $
-@(#)Version:        $Revision: 2014.2 $
-@(#)Last changed:   $Date: 2014/12/27 23:14:36 $
+@(#)Version:        $Revision: 2019.2 $
+@(#)Last changed:   $Date: 2019/08/16 05:47:20 $
 @(#)Purpose:        Perform standardized I/O error check for filter programs
 @(#)Author:         J Leffler
-@(#)Copyright:      (C) JLSS 2003,2005,2008,2014
-@(#)Product:        SCC Version 6.80 (2017-10-26)
+@(#)Copyright:      (C) JLSS 2003-2019
+@(#)Product:        SCC Version 8.0.1 (2022-05-21)
 */
 
 /*TABSTOP=4*/
@@ -17,7 +17,8 @@ static int numfiles = 0;
 
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
-const char jlss_id_filterio_c[] = "@(#)$Id: filterio.c,v 2014.2 2014/12/27 23:14:36 jleffler Exp $";
+extern const char jlss_id_filterio_c[];
+const char jlss_id_filterio_c[] = "@(#)$Id: filterio.c,v 2019.2 2019/08/16 05:47:20 jleffler Exp $";
 #endif /* lint */
 
 /* filter_numfiles() - return number of files to be processed */
@@ -67,8 +68,8 @@ static int cat(FILE *ifp, const char *ifn, FILE *ofp)
     {
         if (fwrite(buffer, sizeof(char), nbytes, ofp) != nbytes)
         {
-            err_syserr1("write failed");
-            break;
+            err_syserr("write failed: ");
+            /*NOTREACHED*/
         }
     }
     return(filter_io_check(ifp, ifn, ofp));

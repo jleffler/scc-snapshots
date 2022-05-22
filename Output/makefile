@@ -1,4 +1,4 @@
-# @(#)$Id: makefile,v 1.5 2017/10/18 05:56:33 jleffler Exp $
+# @(#)$Id: makefile,v 1.6 2019/01/26 07:29:50 jonathanleffler Exp $
 #
 # Makefile for SCC test output directory
 
@@ -109,6 +109,28 @@ FILES = \
 	scc.test-08.example2-ec.2 \
 	scc.test-08.example2-en.1 \
 	scc.test-08.example2-en.2 \
+	scc.test-09.trailing-whisp-e.1 \
+	scc.test-09.trailing-whisp-e.2 \
+	scc.test-09.trailing-whisp-ec.1 \
+	scc.test-09.trailing-whisp-ec.2 \
+	scc.test-09.trailing-whisp-ect.1 \
+	scc.test-09.trailing-whisp-ect.2 \
+	scc.test-09.trailing-whisp-en.1 \
+	scc.test-09.trailing-whisp-en.2 \
+	scc.test-09.trailing-whisp-ent.1 \
+	scc.test-09.trailing-whisp-ent.2 \
+	scc.test-09.trailing-whisp-et.1 \
+	scc.test-09.trailing-whisp-et.2 \
+	scc.test-09.trailing-whisp-t.1 \
+	scc.test-09.trailing-whisp-t.2 \
+	scc.test-10.endcomment-c.1 \
+	scc.test-10.endcomment-c.2 \
+	scc.test-10.endcomment-e.1 \
+	scc.test-10.endcomment-e.2 \
+	scc.test-10.endcomment-n.1 \
+	scc.test-10.endcomment-n.2 \
+	scc.test-10.endcomment-t.1 \
+	scc.test-10.endcomment-t.2 \
 
 all:	${FILES}
 
