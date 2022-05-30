@@ -1,11 +1,11 @@
 /*
 @(#)File:           $RCSfile: scc-test.rawstring.cpp,v $
-@(#)Version:        $Revision: 8.1 $
-@(#)Last changed:   $Date: 2022/05/21 19:16:48 $
+@(#)Version:        $Revision: 8.2 $
+@(#)Last changed:   $Date: 2022/05/30 01:02:47 $
 @(#)Purpose:        Test SCC on C++11 raw strings
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014-15
-@(#)Product:        SCC Version 8.0.1 (2022-05-21)
+@(#)Product:        SCC Version 8.0.2 (2022-05-29)
 */
 
 /*TABSTOP=4*/
@@ -13,7 +13,7 @@
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_rawstring_cpp[];
-const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 8.1 2022/05/21 19:16:48 jonathanleffler Exp $";
+const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring.cpp,v 8.2 2022/05/30 01:02:47 jonathanleffler Exp $";
 #endif /* lint */
 
 /* NB: This requires C++11 or C++14 support to compile; C++98 is not adequate */
@@ -181,7 +181,7 @@ to jump through )abcdefghijklmnop)abc))abcdefghijklmnopq
 )abcdefghijklmnop";   /* And a final comment */
 
 #if defined(REGEX_TYPE_DEFINED)
-/* Bug report from Oleg Skinderev 2022-05-22 via GitHub */
+/* Bug report (issue #1) from Oleg Skinderev 2022-05-22 via GitHub */
 /* Input string - should be unchanged */
 static regex incl1{R"/(\s*#\s*include\s*"([^"]*)"\s*)/"};
 static regex incl2{R"/(\s*#\s*include\s*<([^>]*)>\s*)/"};
@@ -190,3 +190,20 @@ static regex incl2{R"/(\s*#\s*include\s*<([^>]*)>\s*)/"};
 static regex incl1{R"/(\s*#\s*include\s*"([^"]*)\s*)/"};
 static regex incl2{R"/(\s*#\s*include\s*<([^>]*)\s*)/"};
 #endif /* REGEX_TYPE_DEFINED */
+
+#if defined(STRING_TYPE_DEFINED)
+/* Bug report (issue #2) from Oleg Skinderev 2022-05-29 via GitHub */
+/* Input quoted data - double and single quoted */
+/* Double-quoted data provided by OS (except for backslash/single-quotes) */
+/* Single-quoted data adapted by JL */
+string str1 = "RC-21\'\\\\M2";
+string str2 = "\"\\r\\n\'\t\\\"\\\\\"";
+string str3 = 'R\\\\M2';
+string str4 = '\'\\r\"\\"\\n\t\\\'\\\\\'';
+/* Buggy output - should be the same as the input but wasn't */
+/* NB: defining STRING_TYPE_DEFINED won't let this compile */
+string str1 = "RC-21\'\\\\2";
+string str2 = "\"\\\\\'\t\\\"\\\\\"";
+string str3 = 'R\\\\2';
+string str4 = '\'\\\"\\\\\t\\\'\\\\\'';
+#endif /* STRING_TYPE_DEFINED */

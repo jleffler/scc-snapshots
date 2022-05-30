@@ -13,7 +13,7 @@
 #ifndef lint
 
 extern const char jlss_id_scc_rawstring_cpp[];
-const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring-c++14.1,v 8.1 2022/05/21 19:18:57 jonathanleffler Exp $";
+const char jlss_id_scc_rawstring_cpp[] = "@(#)$Id: scc-test.rawstring-c++14.1,v 8.2 2022/05/30 00:58:35 jonathanleffler Exp $";
 #endif
 
 
@@ -189,4 +189,21 @@ static regex incl2{R"/(\s*#\s*include\s*<([^>]*)>\s*)/"};
 
 static regex incl1{R"/(\s*#\s*include\s*"([^"]*)\s*)/"};
 static regex incl2{R"/(\s*#\s*include\s*<([^>]*)\s*)/"};
+#endif
+
+#if defined(STRING_TYPE_DEFINED)
+
+
+
+
+string str1 = "RC-21\'\\\\M2";
+string str2 = "\"\\r\\n\'\t\\\"\\\\\"";
+string str3 = 'R\\\\M2';
+string str4 = '\'\\r\"\\"\\n\t\\\'\\\\\'';
+
+
+string str1 = "RC-21\'\\\\2";
+string str2 = "\"\\\\\'\t\\\"\\\\\"";
+string str3 = 'R\\\\2';
+string str4 = '\'\\\"\\\\\t\\\'\\\\\'';
 #endif

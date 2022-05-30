@@ -5,7 +5,7 @@
 @(#)Purpose:        Request appropriate POSIX and X/Open Support
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2010-2017
-@(#)Product:        SCC Version 8.0.1 (2022-05-21)
+@(#)Product:        SCC Version 8.0.2 (2022-05-29)
 */
 
 /*TABSTOP=4*/

@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on C++14 binary numbers
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014
-@(#)Product:        SCC Version 8.0.1 (2022-05-21)
+@(#)Product:        SCC Version 8.0.2 (2022-05-29)
 */
 
 int i = 0b0100;

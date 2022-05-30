@@ -1,7 +1,7 @@
 /*
 @(#)File:           $RCSfile: scc.c,v $
-@(#)Version:        $Revision: 8.2 $
-@(#)Last changed:   $Date: 2022/05/21 19:22:21 $
+@(#)Version:        $Revision: 8.3 $
+@(#)Last changed:   $Date: 2022/05/30 01:02:22 $
 @(#)Purpose:        Strip C comments
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1991-2022
@@ -176,7 +176,7 @@ static size_t  whisp_off = 0;
 #ifndef lint
 /* Prevent over-aggressive optimizers from eliminating ID string */
 extern const char jlss_id_scc_c[];
-const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 8.2 2022/05/21 19:22:21 jonathanleffler Exp $";
+const char jlss_id_scc_c[] = "@(#)$Id: scc.c,v 8.3 2022/05/30 01:02:22 jonathanleffler Exp $";
 #endif /* lint */
 
 /* Always maintain enough space in whisp for a null to be added */
@@ -353,11 +353,9 @@ static void endquote(char q, FILE *fp, const char *fn, const char *msg)
 
                 if (bs_count % 2 == 0)
                 {
+                    s_putch(c2);
                     if (c2 == q)
-                    {
-                        s_putch(c2);
                         return;
-                    }
                 }
                 else
                 {
