@@ -5,7 +5,7 @@
 @(#)Purpose:        Header file for standard error functions
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 1989-2022
-@(#)Product:        SCC Version 8.0.2 (2022-05-29)
+@(#)Product:        SCC Version 8.0.3 (2022-05-30)
 */
 
 #if !defined(STDERR_H)

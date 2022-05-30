@@ -6,6 +6,7 @@ described in [Remove Comments from C/C++
 Code](http://stackoverflow.com/questions/2394017/) on Stack Overflow.
 
 There are currently 8 releases:
+* 8.0.3 (2022-05-30) - stable release
 * 8.0.2 (2022-05-30) - stable release
 * 8.0.1 (2022-05-21) - stable release
 * 6.80  (2017-10-26) - stable release
@@ -18,6 +19,11 @@ There are currently 8 releases:
 * 4.03  (2008-06-07) - stable release
 
 These are tagged release/x.yz.  The code is all on branch master.
+
+### Version 8.0.3 - 2022-05-30
+
+A packaging snafu left SCC reporting the wrong version.
+Add an explicit GPL 3.0 licence file (as COPYING).
 
 ### Version 8.0.2 - 2022-05-30
 

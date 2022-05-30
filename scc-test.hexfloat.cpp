@@ -5,7 +5,7 @@
 @(#)Purpose:        Hexadecimal floating point constants (C99 and later)
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2016
-@(#)Product:        SCC Version 8.0.2 (2022-05-29)
+@(#)Product:        SCC Version 8.0.3 (2022-05-30)
 */
 
 // There is evidence from G++ 6.1.0 that C++17 (C++1z) will support

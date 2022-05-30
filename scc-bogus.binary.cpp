@@ -5,7 +5,7 @@
 @(#)Purpose:        Test SCC on bogus C++14 binary numbers
 @(#)Author:         J Leffler
 @(#)Copyright:      (C) JLSS 2014
-@(#)Product:        SCC Version 8.0.2 (2022-05-29)
+@(#)Product:        SCC Version 8.0.3 (2022-05-30)
 */
 
 int i = 0b'0100;                // Quote without digit before

@@ -1,4 +1,4 @@
-# @(#)$Id: makefile,v 1.13 2022/05/21 19:25:27 jonathanleffler Exp $
+# @(#)$Id: makefile,v 1.14 2022/05/30 21:13:00 jonathanleffler Exp $
 #
 # Release Makefile for SCC (Strip C/C++ Comments)
 #
@@ -15,7 +15,8 @@ IFLAGS  = # -I directory options
 DFLAGS  = # -D define options
 CFLAGS  = ${OFLAGS} ${UFLAGS} ${WFLAGS} ${IFLAGS} ${DFLAGS}
 
-BASH = bash
+BASH    = bash
+LN      = ln
 
 TEST_FLAGS = # Nothing by default; -g to generate new results, etc.
 
@@ -33,12 +34,18 @@ TEST_SCRIPTS = \
 	scc.test-09.sh \
 	scc.test-10.sh \
 
+LICENCE = COPYING
+GPL_3_0 = gpl-3.0.txt
+
 VERSION_HDR = ${PROGRAM}-version.h
 
-all: ${PROGRAM} ${TEST_TOOLS}
+all: ${LICENCE} ${PROGRAM} ${TEST_TOOLS}
 
 # The make on AIX 7.2 interprets this as the default target if it appears before all
 .PHONEY: all test dev-test clean realclean depend
+
+${LICENCE}: ${GPL_3_0}
+	${LN} $< $@
 
 ${PROGRAM}: ${OBJECT} ${VERSION_HDR}
 	${CC} -o $@ ${CFLAGS} ${OBJECT} ${LDFLAGS} ${LDLIBES}
